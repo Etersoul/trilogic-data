@@ -14,12 +14,12 @@ namespace Trilogic
 		protected virtual void Build ()
 		{
 			global::Stetic.Gui.Initialize (this);
-			// Widget OrionBackupTools.FolderSelector
-			this.Name = "OrionBackupTools.FolderSelector";
+			// Widget Trilogic.FolderSelector
+			this.Name = "Trilogic.FolderSelector";
 			this.Title = global::Mono.Unix.Catalog.GetString ("FolderSelector");
 			this.WindowPosition = ((global::Gtk.WindowPosition)(4));
 			this.BorderWidth = ((uint)(6));
-			// Container child OrionBackupTools.FolderSelector.Gtk.Container+ContainerChild
+			// Container child Trilogic.FolderSelector.Gtk.Container+ContainerChild
 			this.vbox1 = new global::Gtk.VBox ();
 			this.vbox1.Name = "vbox1";
 			this.vbox1.Spacing = 6;

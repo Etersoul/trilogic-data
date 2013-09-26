@@ -5,11 +5,12 @@ namespace Trilogic
 	public partial class MainWindow
 	{
 		private global::Gtk.UIManager UIManager;
-		private global::Gtk.Action FileAction2;
-		private global::Gtk.Action quitAction2;
+		private global::Gtk.Action FileAction;
+		private global::Gtk.Action quitAction;
+		private global::Gtk.Action EditAction;
 		private global::Gtk.Action OptionsAction;
 		private global::Gtk.VBox vbox4;
-		private global::Gtk.MenuBar menubar2;
+		private global::Gtk.MenuBar menubar;
 		private global::Gtk.VPaned vpaned1;
 		private global::Gtk.VBox vbox2;
 		private global::Gtk.HBox hbox6;
@@ -44,35 +45,39 @@ namespace Trilogic
 		protected virtual void Build ()
 		{
 			global::Stetic.Gui.Initialize (this);
-			// Widget OrionBackupTools.MainWindow
+			// Widget Trilogic.MainWindow
 			this.UIManager = new global::Gtk.UIManager ();
 			global::Gtk.ActionGroup w1 = new global::Gtk.ActionGroup ("Default");
-			this.FileAction2 = new global::Gtk.Action ("FileAction2", global::Mono.Unix.Catalog.GetString ("File"), null, null);
-			this.FileAction2.ShortLabel = global::Mono.Unix.Catalog.GetString ("File");
-			w1.Add (this.FileAction2, null);
-			this.quitAction2 = new global::Gtk.Action ("quitAction2", global::Mono.Unix.Catalog.GetString ("Quit"), null, "gtk-quit");
-			this.quitAction2.ShortLabel = global::Mono.Unix.Catalog.GetString ("Quit");
-			w1.Add (this.quitAction2, null);
+			this.FileAction = new global::Gtk.Action ("FileAction", global::Mono.Unix.Catalog.GetString ("File"), null, null);
+			this.FileAction.ShortLabel = global::Mono.Unix.Catalog.GetString ("File");
+			w1.Add (this.FileAction, null);
+			this.quitAction = new global::Gtk.Action ("quitAction", global::Mono.Unix.Catalog.GetString ("Quit"), null, "gtk-quit");
+			this.quitAction.ShortLabel = global::Mono.Unix.Catalog.GetString ("Quit");
+			w1.Add (this.quitAction, null);
+			this.EditAction = new global::Gtk.Action ("EditAction", global::Mono.Unix.Catalog.GetString ("Edit"), null, null);
+			this.EditAction.ShortLabel = global::Mono.Unix.Catalog.GetString ("Edit");
+			w1.Add (this.EditAction, null);
 			this.OptionsAction = new global::Gtk.Action ("OptionsAction", global::Mono.Unix.Catalog.GetString ("Options"), null, null);
 			this.OptionsAction.ShortLabel = global::Mono.Unix.Catalog.GetString ("Options");
 			w1.Add (this.OptionsAction, null);
 			this.UIManager.InsertActionGroup (w1, 0);
 			this.AddAccelGroup (this.UIManager.AccelGroup);
-			this.Name = "OrionBackupTools.MainWindow";
+			this.Name = "Trilogic.MainWindow";
 			this.Title = global::Mono.Unix.Catalog.GetString ("Orion Backup");
 			this.WindowPosition = ((global::Gtk.WindowPosition)(4));
-			// Container child OrionBackupTools.MainWindow.Gtk.Container+ContainerChild
+			// Container child Trilogic.MainWindow.Gtk.Container+ContainerChild
 			this.vbox4 = new global::Gtk.VBox ();
 			this.vbox4.Name = "vbox4";
 			this.vbox4.Spacing = 6;
 			// Container child vbox4.Gtk.Box+BoxChild
-			this.UIManager.AddUiFromString ("<ui><menubar name=\'menubar2\'><menu name=\'FileAction2\' action=\'FileAction2\'><menui" +
-				"tem name=\'quitAction2\' action=\'quitAction2\'/></menu><menu name=\'OptionsAction\' a" +
-				"ction=\'OptionsAction\'/></menubar></ui>");
-			this.menubar2 = ((global::Gtk.MenuBar)(this.UIManager.GetWidget ("/menubar2")));
-			this.menubar2.Name = "menubar2";
-			this.vbox4.Add (this.menubar2);
-			global::Gtk.Box.BoxChild w2 = ((global::Gtk.Box.BoxChild)(this.vbox4 [this.menubar2]));
+			this.UIManager.AddUiFromString ("<ui><menubar name=\'menubar2\'><menu name=\'FileAction\' action=\'FileAction\'><menuite" +
+				"m name=\'quitAction\' action=\'quitAction\'/></menu><menu name=\'EditAction\' action=\'" +
+				"EditAction\'><menuitem name=\'OptionsAction\' action=\'OptionsAction\'/></menu></menu" +
+				"bar></ui>");
+			this.menubar = ((global::Gtk.MenuBar)(this.UIManager.GetWidget ("/menubar2")));
+			this.menubar.Name = "menubar2";
+			this.vbox4.Add (this.menubar);
+			global::Gtk.Box.BoxChild w2 = ((global::Gtk.Box.BoxChild)(this.vbox4 [this.menubar]));
 			w2.Position = 0;
 			w2.Expand = false;
 			w2.Fill = false;
@@ -80,7 +85,7 @@ namespace Trilogic
 			this.vpaned1 = new global::Gtk.VPaned ();
 			this.vpaned1.CanFocus = true;
 			this.vpaned1.Name = "vpaned1";
-			this.vpaned1.Position = 305;
+			this.vpaned1.Position = 1;
 			this.vpaned1.BorderWidth = ((uint)(5));
 			// Container child vpaned1.Gtk.Paned+PanedChild
 			this.vbox2 = new global::Gtk.VBox ();
@@ -122,7 +127,7 @@ namespace Trilogic
 			this.hpaned1 = new global::Gtk.HPaned ();
 			this.hpaned1.CanFocus = true;
 			this.hpaned1.Name = "hpaned1";
-			this.hpaned1.Position = 297;
+			this.hpaned1.Position = 1;
 			// Container child hpaned1.Gtk.Paned+PanedChild
 			this.vbox5 = new global::Gtk.VBox ();
 			this.vbox5.Name = "vbox5";
@@ -370,10 +375,11 @@ namespace Trilogic
 			this.DefaultHeight = 527;
 			this.Show ();
 			this.DeleteEvent += new global::Gtk.DeleteEventHandler (this.OnDeleteEvent);
-			this.ResizeChecked += new global::System.EventHandler (this.WindowResize);
-			this.quitAction2.Activated += new global::System.EventHandler (this.ExitButtonActivated);
-			this.buttonOpenFolder.Clicked += new global::System.EventHandler (this.ButtonOpenFolderClicked);
-			this.buttonStartDiff.Clicked += new global::System.EventHandler (this.ButtonStartDiffClicked);
+			this.ResizeChecked += new global::System.EventHandler (this.OnResizeChecked);
+			this.quitAction.Activated += new global::System.EventHandler (this.OnQuitActionActivated);
+			this.OptionsAction.Activated += new global::System.EventHandler (this.OnOptionsActionActivated);
+			this.buttonOpenFolder.Clicked += new global::System.EventHandler (this.OnButtonOpenFolderClicked);
+			this.buttonStartDiff.Clicked += new global::System.EventHandler (this.OnButtonStartDiffClicked);
 		}
 	}
 }

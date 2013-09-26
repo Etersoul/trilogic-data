@@ -7,17 +7,21 @@ namespace Trilogic
 		private global::Gtk.VBox vbox2;
 		private global::Gtk.Label labelMessage;
 		private global::Gtk.Label labelStackTrace;
+		private global::Gtk.HSeparator hseparator1;
 		private global::Gtk.Label label3;
-		private global::Gtk.Button buttonCancel;
+		private global::Gtk.Button buttonContinue;
 		private global::Gtk.Button buttonOk;
 
 		protected virtual void Build ()
 		{
 			global::Stetic.Gui.Initialize (this);
-			// Widget OrionBackupTools.ExceptionDialog
-			this.Name = "OrionBackupTools.ExceptionDialog";
+			// Widget Trilogic.ExceptionDialog
+			this.Name = "Trilogic.ExceptionDialog";
 			this.WindowPosition = ((global::Gtk.WindowPosition)(4));
-			// Internal child OrionBackupTools.ExceptionDialog.VBox
+			this.Modal = true;
+			this.BorderWidth = ((uint)(6));
+			this.Resizable = false;
+			// Internal child Trilogic.ExceptionDialog.VBox
 			global::Gtk.VBox w1 = this.VBox;
 			w1.Name = "dialog1_VBox";
 			w1.BorderWidth = ((uint)(2));
@@ -31,6 +35,7 @@ namespace Trilogic
 			this.labelMessage.Xalign = 0F;
 			this.labelMessage.LabelProp = global::Mono.Unix.Catalog.GetString ("Message");
 			this.labelMessage.UseMarkup = true;
+			this.labelMessage.Wrap = true;
 			this.vbox2.Add (this.labelMessage);
 			global::Gtk.Box.BoxChild w2 = ((global::Gtk.Box.BoxChild)(this.vbox2 [this.labelMessage]));
 			w2.Position = 0;
@@ -38,66 +43,111 @@ namespace Trilogic
 			w2.Fill = false;
 			// Container child vbox2.Gtk.Box+BoxChild
 			this.labelStackTrace = new global::Gtk.Label ();
+			this.labelStackTrace.WidthRequest = 600;
 			this.labelStackTrace.Name = "labelStackTrace";
 			this.labelStackTrace.Xalign = 0F;
 			this.labelStackTrace.LabelProp = global::Mono.Unix.Catalog.GetString ("Stack Trace");
+			this.labelStackTrace.Wrap = true;
 			this.vbox2.Add (this.labelStackTrace);
 			global::Gtk.Box.BoxChild w3 = ((global::Gtk.Box.BoxChild)(this.vbox2 [this.labelStackTrace]));
 			w3.Position = 1;
 			w3.Expand = false;
 			w3.Fill = false;
 			// Container child vbox2.Gtk.Box+BoxChild
-			this.label3 = new global::Gtk.Label ();
-			this.label3.Name = "label3";
-			this.label3.Yalign = 1F;
-			this.label3.LabelProp = global::Mono.Unix.Catalog.GetString ("Click OK to Quit the Application. Click Cancel to continue the application with a" +
-				"ll the consequences.");
-			this.vbox2.Add (this.label3);
-			global::Gtk.Box.BoxChild w4 = ((global::Gtk.Box.BoxChild)(this.vbox2 [this.label3]));
-			w4.Position = 3;
+			this.hseparator1 = new global::Gtk.HSeparator ();
+			this.hseparator1.Name = "hseparator1";
+			this.vbox2.Add (this.hseparator1);
+			global::Gtk.Box.BoxChild w4 = ((global::Gtk.Box.BoxChild)(this.vbox2 [this.hseparator1]));
+			w4.Position = 2;
 			w4.Expand = false;
 			w4.Fill = false;
+			// Container child vbox2.Gtk.Box+BoxChild
+			this.label3 = new global::Gtk.Label ();
+			this.label3.WidthRequest = 600;
+			this.label3.Name = "label3";
+			this.label3.Yalign = 1F;
+			this.label3.LabelProp = global::Mono.Unix.Catalog.GetString ("Click the button below to quit the application or continue using the Application." +
+				" Continue to use the application after this exception may cause unexpected behav" +
+				"ior and may cause data loss.");
+			this.label3.Wrap = true;
+			this.vbox2.Add (this.label3);
+			global::Gtk.Box.BoxChild w5 = ((global::Gtk.Box.BoxChild)(this.vbox2 [this.label3]));
+			w5.PackType = ((global::Gtk.PackType)(1));
+			w5.Position = 3;
+			w5.Expand = false;
+			w5.Fill = false;
 			w1.Add (this.vbox2);
-			global::Gtk.Box.BoxChild w5 = ((global::Gtk.Box.BoxChild)(w1 [this.vbox2]));
-			w5.Position = 0;
-			// Internal child OrionBackupTools.ExceptionDialog.ActionArea
-			global::Gtk.HButtonBox w6 = this.ActionArea;
-			w6.Name = "dialog1_ActionArea";
-			w6.Spacing = 10;
-			w6.BorderWidth = ((uint)(5));
-			w6.LayoutStyle = ((global::Gtk.ButtonBoxStyle)(4));
+			global::Gtk.Box.BoxChild w6 = ((global::Gtk.Box.BoxChild)(w1 [this.vbox2]));
+			w6.Position = 0;
+			w6.Expand = false;
+			w6.Fill = false;
+			// Internal child Trilogic.ExceptionDialog.ActionArea
+			global::Gtk.HButtonBox w7 = this.ActionArea;
+			w7.Name = "dialog1_ActionArea";
+			w7.Spacing = 10;
+			w7.BorderWidth = ((uint)(5));
+			w7.LayoutStyle = ((global::Gtk.ButtonBoxStyle)(4));
 			// Container child dialog1_ActionArea.Gtk.ButtonBox+ButtonBoxChild
-			this.buttonCancel = new global::Gtk.Button ();
-			this.buttonCancel.CanDefault = true;
-			this.buttonCancel.CanFocus = true;
-			this.buttonCancel.Name = "buttonCancel";
-			this.buttonCancel.UseStock = true;
-			this.buttonCancel.UseUnderline = true;
-			this.buttonCancel.Label = "gtk-cancel";
-			this.AddActionWidget (this.buttonCancel, -6);
-			global::Gtk.ButtonBox.ButtonBoxChild w7 = ((global::Gtk.ButtonBox.ButtonBoxChild)(w6 [this.buttonCancel]));
-			w7.Expand = false;
-			w7.Fill = false;
+			this.buttonContinue = new global::Gtk.Button ();
+			this.buttonContinue.CanDefault = true;
+			this.buttonContinue.CanFocus = true;
+			this.buttonContinue.Name = "buttonContinue";
+			this.buttonContinue.UseUnderline = true;
+			// Container child buttonContinue.Gtk.Container+ContainerChild
+			global::Gtk.Alignment w8 = new global::Gtk.Alignment (0.5F, 0.5F, 0F, 0F);
+			// Container child GtkAlignment.Gtk.Container+ContainerChild
+			global::Gtk.HBox w9 = new global::Gtk.HBox ();
+			w9.Spacing = 2;
+			// Container child GtkHBox.Gtk.Container+ContainerChild
+			global::Gtk.Image w10 = new global::Gtk.Image ();
+			w10.Pixbuf = global::Stetic.IconLoader.LoadIcon (this, "gtk-execute", global::Gtk.IconSize.Menu);
+			w9.Add (w10);
+			// Container child GtkHBox.Gtk.Container+ContainerChild
+			global::Gtk.Label w12 = new global::Gtk.Label ();
+			w12.LabelProp = global::Mono.Unix.Catalog.GetString ("_Continue");
+			w12.UseUnderline = true;
+			w9.Add (w12);
+			w8.Add (w9);
+			this.buttonContinue.Add (w8);
+			this.AddActionWidget (this.buttonContinue, -6);
+			global::Gtk.ButtonBox.ButtonBoxChild w16 = ((global::Gtk.ButtonBox.ButtonBoxChild)(w7 [this.buttonContinue]));
+			w16.Expand = false;
+			w16.Fill = false;
 			// Container child dialog1_ActionArea.Gtk.ButtonBox+ButtonBoxChild
 			this.buttonOk = new global::Gtk.Button ();
 			this.buttonOk.CanDefault = true;
 			this.buttonOk.CanFocus = true;
 			this.buttonOk.Name = "buttonOk";
-			this.buttonOk.UseStock = true;
 			this.buttonOk.UseUnderline = true;
-			this.buttonOk.Label = "gtk-ok";
+			// Container child buttonOk.Gtk.Container+ContainerChild
+			global::Gtk.Alignment w17 = new global::Gtk.Alignment (0.5F, 0.5F, 0F, 0F);
+			// Container child GtkAlignment.Gtk.Container+ContainerChild
+			global::Gtk.HBox w18 = new global::Gtk.HBox ();
+			w18.Spacing = 2;
+			// Container child GtkHBox.Gtk.Container+ContainerChild
+			global::Gtk.Image w19 = new global::Gtk.Image ();
+			w19.Pixbuf = global::Stetic.IconLoader.LoadIcon (this, "gtk-quit", global::Gtk.IconSize.Menu);
+			w18.Add (w19);
+			// Container child GtkHBox.Gtk.Container+ContainerChild
+			global::Gtk.Label w21 = new global::Gtk.Label ();
+			w21.LabelProp = global::Mono.Unix.Catalog.GetString ("_Quit");
+			w21.UseUnderline = true;
+			w18.Add (w21);
+			w17.Add (w18);
+			this.buttonOk.Add (w17);
 			this.AddActionWidget (this.buttonOk, -5);
-			global::Gtk.ButtonBox.ButtonBoxChild w8 = ((global::Gtk.ButtonBox.ButtonBoxChild)(w6 [this.buttonOk]));
-			w8.Position = 1;
-			w8.Expand = false;
-			w8.Fill = false;
+			global::Gtk.ButtonBox.ButtonBoxChild w25 = ((global::Gtk.ButtonBox.ButtonBoxChild)(w7 [this.buttonOk]));
+			w25.Position = 1;
+			w25.Expand = false;
+			w25.Fill = false;
 			if ((this.Child != null)) {
 				this.Child.ShowAll ();
 			}
-			this.DefaultWidth = 565;
+			this.DefaultWidth = 616;
 			this.DefaultHeight = 300;
 			this.Show ();
-			this.buttonOk.Clicked += new global::System.EventHandler (this.ButtonOKClicked);
+			this.buttonContinue.Clicked += new global::System.EventHandler (this.OnButtonContinueClicked);
+			this.buttonOk.Clicked += new global::System.EventHandler (this.OnButtonQuitClicked);
 		}
 	}
 }

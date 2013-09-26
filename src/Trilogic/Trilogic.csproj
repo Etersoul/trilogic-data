@@ -69,9 +69,17 @@
     <Compile Include="gtk-gui\Trilogic.MainWindow.cs" />
     <Compile Include="gtk-gui\Trilogic.FolderSelector.cs" />
     <Compile Include="gtk-gui\Trilogic.ExceptionDialog.cs" />
+    <Compile Include="OptionsWindow.cs" />
+    <Compile Include="gtk-gui\Trilogic.OptionsWindow.cs" />
+    <Compile Include="Utility\GtkLogService.cs" />
+    <Compile Include="Utility\ILogService.cs" />
+    <Compile Include="Data\DirectoryAccess.cs" />
+    <Compile Include="Data\SqlServerAccess.cs" />
+    <Compile Include="Data\DataAccessBase.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Folder Include="Utility\" />
+    <Folder Include="Data\" />
   </ItemGroup>
 </Project>

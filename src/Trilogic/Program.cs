@@ -1,10 +1,22 @@
-using System;
-using Gtk;
-
+// <copyright file="Program.cs" company="Etersoul">
+// This code is part of Trilogic Data Project.
+// </copyright>
+// <author>William</author>
 namespace Trilogic
 {
-    class MainClass
+    using System;
+
+    using Gtk;
+
+    /// <summary>
+    /// Main class.
+    /// </summary>
+    public class Program
     {
+        /// <summary>
+        /// The entry point of the program, where the program control starts and ends.
+        /// </summary>
+        /// <param name="args">The command-line arguments.</param>
         public static void Main(string[] args)
         {
             Application.Init();

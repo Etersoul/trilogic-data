@@ -1,32 +1,56 @@
+// <copyright file="MainWindow.cs" company="Etersoul">
+// This code is part of Trilogic Data Project.
+// </copyright>
+// <author>William</author>
 namespace Trilogic
 {
     using System;
-    using Gtk;
+    using System.Collections.Generic;
     using System.Data;
     using System.Data.SqlClient;
     using System.IO;
 
-    public partial class MainWindow: Gtk.Window
-    {   
-        private TextBuffer buffer;
-        private AppSettings appSettings;
-        public MainWindow(): base (Gtk.WindowType.Toplevel)
-        {
-            Build();
-            appSettings = new AppSettings();
-            appSettings.ReadFromFile();
+    using Gtk;
+    using Trilogic.Data;
+    using Trilogic.Utility;
 
-            this.entryHost.Text = appSettings.DBHost;
-            this.entryUser.Text = appSettings.DBUser;
-            this.entryPassword.Text = appSettings.DBPassword;
-            this.entryDatabase.Text = appSettings.DBName;
-            this.entryFolder.Text = appSettings.DirectoryPath;
+    /// <summary>
+    /// Main window.
+    /// </summary>
+    public partial class MainWindow : Gtk.Window
+    {
+        /// <summary>
+        /// The buffer.
+        /// </summary>
+        private TextBuffer buffer;
+
+        /// <summary>
+        /// The app settings.
+        /// </summary>
+        private AppSettings appSettings;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Trilogic.MainWindow"/> class.
+        /// </summary>
+        public MainWindow() : base(Gtk.WindowType.Toplevel)
+        {
+            this.Build();
+            this.appSettings = new AppSettings();
+            this.appSettings.ReadFromFile();
+
+            this.entryHost.Text = this.appSettings.DBHost;
+            this.entryUser.Text = this.appSettings.DBUser;
+            this.entryPassword.Text = this.appSettings.DBPassword;
+            this.entryDatabase.Text = this.appSettings.DBName;
+            this.entryFolder.Text = this.appSettings.DirectoryPath;
 
             // force the position to this specific position
             this.vpaned1.Position = 300;
             this.hpaned1.Position = 300;
 
+            // set buffer for textviewLog
             this.buffer = textviewLog.Buffer;
+            GtkLogService.Instance.Buffer = this.buffer;
 
             TreeViewColumn column = new TreeViewColumn();
             TreeViewColumn columnFile = new TreeViewColumn();
@@ -45,50 +69,107 @@ namespace Trilogic
             column.AddAttribute(renderer, "text", 0);
             columnFile.AddAttribute(renderer2, "text", 0);
 
-            this.Log("Insert the username and start the diff");
+            GtkLogService.Instance.Write("Insert the username and start the diff");
         }
 
+        /// <summary>
+        /// Fills the folder.
+        /// </summary>
+        /// <param name="folder">The folder.</param>
         public void FillFolder(string folder)
         {
             this.entryFolder.Text = folder;
         }
 
+        /// <summary>
+        /// Quit this instance.
+        /// </summary>
         public void Quit()
         {
             this.SaveConfiguration();
             Application.Quit();
         }
 
+        /// <summary>
+        /// Raises the delete event event.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="a">The delete event arguments.</param>
         protected void OnDeleteEvent(object sender, DeleteEventArgs a)
         {
             this.Quit();
         }
 
-        protected void ExitButtonActivated(object sender, EventArgs e)
+        /// <summary>
+        /// Raises the resize checked event.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">Event arguments.</param>
+        protected void OnResizeChecked(object sender, EventArgs e)
+        {
+            if (this.WidthRequest < 600)
+            {
+                this.WidthRequest = 600;
+            }
+
+            if (this.HeightRequest < 400)
+            {
+                this.HeightRequest = 400;
+            }
+        }
+
+        /// <summary>
+        /// Saves the configuration.
+        /// </summary>
+        protected void SaveConfiguration()
+        {
+            this.appSettings.DBHost = this.entryHost.Text;
+            this.appSettings.DBUser = this.entryUser.Text;
+            this.appSettings.DBPassword = this.entryPassword.Text;
+            this.appSettings.DBName = this.entryDatabase.Text;
+            this.appSettings.DirectoryPath = this.entryFolder.Text;
+
+            this.appSettings.WriteToFile();
+        }
+
+        /// <summary>
+        /// Raises the quit action activated event.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">Event arguments.</param>
+        protected void OnQuitActionActivated(object sender, EventArgs e)
         {
             this.Quit();
         }
 
-        protected void SaveConfiguration()
-        {
-            appSettings.DBHost = this.entryHost.Text;
-            appSettings.DBUser = this.entryUser.Text;
-            appSettings.DBPassword = this.entryPassword.Text;
-            appSettings.DBName = this.entryDatabase.Text;
-            appSettings.DirectoryPath = this.entryFolder.Text;
-
-            appSettings.WriteToFile();
+        /// <summary>
+        /// Raises the button open folder clicked event.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">Event arguments.</param>
+        protected void OnButtonOpenFolderClicked(object sender, EventArgs e)
+        {   
+            new FolderSelector(this).ActivateFocus();
         }
 
-        protected void ButtonStartDiffClicked(object sender, EventArgs e)
+        /// <summary>
+        /// Raises the options action activated event.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">Event arguments.</param>
+        protected void OnOptionsActionActivated(object sender, EventArgs e)
+        {
+            new OptionsWindow().Show();
+        }
+
+        /// <summary>
+        /// Raises the button start diff clicked event.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">Event arguments.</param>
+        protected void OnButtonStartDiffClicked(object sender, EventArgs e)
         {
             this.SaveConfiguration();
-
-            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
-            builder.DataSource = entryHost.Text;
-            builder.UserID = entryUser.Text;
-            builder.Password = entryPassword.Text;
-            builder.ConnectTimeout = 5;
 
             // prepare the list store
             ListStore list = new ListStore(typeof(string));
@@ -96,74 +177,32 @@ namespace Trilogic
 
             ListStore list2 = new ListStore(typeof(string));
             treeviewFile.Model = list2;
-       
-            try
+
+            SqlServerAccess sql = new SqlServerAccess(entryHost.Text, entryUser.Text, entryPassword.Text, entryDatabase.Text);
+            List<string> listTable = sql.GetTables();
+
+            foreach (string str in listTable)
             {
-                using (SqlConnection connection = new SqlConnection(builder.ToString()))
-                {
-                    this.Log("Opening connection");
-                    connection.Open();
-
-                    SqlCommand command = connection.CreateCommand();
-                    command.CommandText = "SELECT h.name + '.' + s.name AS name FROM sys.tables s INNER JOIN sys.schemas h ON h.schema_id = s.schema_id WHERE s.type = 'U' ORDER BY s.name";
-                    command.CommandType = CommandType.Text;
-
-                    this.Log("Sending command");
-                    using (SqlDataReader reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            list.AppendValues(reader["name"].ToString());
-                        }
-                    }
-
-                    this.Log("Process finished");
-                }
-            }
-            catch (Exception ex)
-            {
-                buffer.Text = ex.Message;
+                list.AppendValues(str);
             }
 
             string dir = this.entryFolder.Text;
             if (!Directory.Exists(dir))
             {
-                this.Log(string.Concat("Failed to get directory ", dir));
+                GtkLogService.Instance.Write(string.Concat("Failed to get directory ", dir));
                 return;
             }
 
             string tableDir = dir + "/table";
             if (!Directory.Exists(tableDir))
             {
-                this.Log(string.Concat("Failed to get table directory ", tableDir));
+                GtkLogService.Instance.Write(string.Concat("Failed to get table directory ", tableDir));
                 return;
             }
 
             foreach (string file in Directory.GetFiles(tableDir))
             {
-                list2.AppendValues(file.Replace("\\", "/").Substring(tableDir.Length + 1, -4));
-            }
-        }
-
-        protected void Log(string msg)
-        {
-            buffer.Text += msg + "\n";
-        }
-
-        protected void ButtonOpenFolderClicked(object sender, EventArgs e)
-        {
-            new FolderSelector(this).ActivateFocus();
-        }
-
-        protected void WindowResize(object sender, EventArgs e)
-        {
-            if (this.WidthRequest < 600)
-            {
-                this.WidthRequest = 600;
-            }
-            if (this.HeightRequest < 400)
-            {
-                this.HeightRequest = 400;
+                list2.AppendValues(file.Replace("\\", "/").Substring(tableDir.Length + 1));
             }
         }
     }
