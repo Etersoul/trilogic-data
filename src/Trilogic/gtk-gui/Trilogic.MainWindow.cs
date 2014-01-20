@@ -15,7 +15,7 @@ namespace Trilogic
 		private global::Gtk.VBox vbox2;
 		private global::Gtk.HBox hbox6;
 		private global::Gtk.Fixed fixed1;
-		private global::Gtk.ComboBox combobox1;
+		private global::Gtk.ComboBox comboShow;
 		private global::Gtk.ComboBox combobox2;
 		private global::Gtk.HPaned hpaned1;
 		private global::Gtk.VBox vbox5;
@@ -63,19 +63,19 @@ namespace Trilogic
 			this.UIManager.InsertActionGroup (w1, 0);
 			this.AddAccelGroup (this.UIManager.AccelGroup);
 			this.Name = "Trilogic.MainWindow";
-			this.Title = global::Mono.Unix.Catalog.GetString ("Orion Backup");
+			this.Title = global::Mono.Unix.Catalog.GetString ("Trilogic Backup");
 			this.WindowPosition = ((global::Gtk.WindowPosition)(4));
 			// Container child Trilogic.MainWindow.Gtk.Container+ContainerChild
 			this.vbox4 = new global::Gtk.VBox ();
 			this.vbox4.Name = "vbox4";
 			this.vbox4.Spacing = 6;
 			// Container child vbox4.Gtk.Box+BoxChild
-			this.UIManager.AddUiFromString ("<ui><menubar name=\'menubar2\'><menu name=\'FileAction\' action=\'FileAction\'><menuite" +
-				"m name=\'quitAction\' action=\'quitAction\'/></menu><menu name=\'EditAction\' action=\'" +
-				"EditAction\'><menuitem name=\'OptionsAction\' action=\'OptionsAction\'/></menu></menu" +
-				"bar></ui>");
-			this.menubar = ((global::Gtk.MenuBar)(this.UIManager.GetWidget ("/menubar2")));
-			this.menubar.Name = "menubar2";
+			this.UIManager.AddUiFromString ("<ui><menubar name=\'menubar\'><menu name=\'FileAction\' action=\'FileAction\'><menuitem" +
+			" name=\'quitAction\' action=\'quitAction\'/></menu><menu name=\'EditAction\' action=\'E" +
+			"ditAction\'><menuitem name=\'OptionsAction\' action=\'OptionsAction\'/></menu></menub" +
+			"ar></ui>");
+			this.menubar = ((global::Gtk.MenuBar)(this.UIManager.GetWidget ("/menubar")));
+			this.menubar.Name = "menubar";
 			this.vbox4.Add (this.menubar);
 			global::Gtk.Box.BoxChild w2 = ((global::Gtk.Box.BoxChild)(this.vbox4 [this.menubar]));
 			w2.Position = 0;
@@ -103,10 +103,13 @@ namespace Trilogic
 			global::Gtk.Box.BoxChild w3 = ((global::Gtk.Box.BoxChild)(this.hbox6 [this.fixed1]));
 			w3.Position = 0;
 			// Container child hbox6.Gtk.Box+BoxChild
-			this.combobox1 = global::Gtk.ComboBox.NewText ();
-			this.combobox1.Name = "combobox1";
-			this.hbox6.Add (this.combobox1);
-			global::Gtk.Box.BoxChild w4 = ((global::Gtk.Box.BoxChild)(this.hbox6 [this.combobox1]));
+			this.comboShow = global::Gtk.ComboBox.NewText ();
+			this.comboShow.AppendText (global::Mono.Unix.Catalog.GetString ("Show All"));
+			this.comboShow.AppendText (global::Mono.Unix.Catalog.GetString ("Show Difference"));
+			this.comboShow.Name = "comboShow";
+			this.comboShow.Active = 1;
+			this.hbox6.Add (this.comboShow);
+			global::Gtk.Box.BoxChild w4 = ((global::Gtk.Box.BoxChild)(this.hbox6 [this.comboShow]));
 			w4.Position = 1;
 			w4.Expand = false;
 			w4.Fill = false;
@@ -208,41 +211,29 @@ namespace Trilogic
 			this.buttonOpenFolder.CanFocus = true;
 			this.buttonOpenFolder.Name = "buttonOpenFolder";
 			this.buttonOpenFolder.UseUnderline = true;
-			// Container child buttonOpenFolder.Gtk.Container+ContainerChild
-			global::Gtk.Alignment w12 = new global::Gtk.Alignment (0.5F, 0.5F, 0F, 0F);
-			// Container child GtkAlignment.Gtk.Container+ContainerChild
-			global::Gtk.HBox w13 = new global::Gtk.HBox ();
-			w13.Spacing = 2;
-			// Container child GtkHBox.Gtk.Container+ContainerChild
-			global::Gtk.Image w14 = new global::Gtk.Image ();
-			w14.Pixbuf = global::Stetic.IconLoader.LoadIcon (this, "gtk-open", global::Gtk.IconSize.Menu);
-			w13.Add (w14);
-			// Container child GtkHBox.Gtk.Container+ContainerChild
-			global::Gtk.Label w16 = new global::Gtk.Label ();
-			w16.LabelProp = global::Mono.Unix.Catalog.GetString ("_Open");
-			w16.UseUnderline = true;
-			w13.Add (w16);
-			w12.Add (w13);
-			this.buttonOpenFolder.Add (w12);
+			this.buttonOpenFolder.Label = global::Mono.Unix.Catalog.GetString ("_Open");
+			global::Gtk.Image w12 = new global::Gtk.Image ();
+			w12.Pixbuf = global::Stetic.IconLoader.LoadIcon (this, "gtk-open", global::Gtk.IconSize.Menu);
+			this.buttonOpenFolder.Image = w12;
 			this.hbox1.Add (this.buttonOpenFolder);
-			global::Gtk.Box.BoxChild w20 = ((global::Gtk.Box.BoxChild)(this.hbox1 [this.buttonOpenFolder]));
-			w20.Position = 1;
-			w20.Expand = false;
-			w20.Fill = false;
+			global::Gtk.Box.BoxChild w13 = ((global::Gtk.Box.BoxChild)(this.hbox1 [this.buttonOpenFolder]));
+			w13.Position = 1;
+			w13.Expand = false;
+			w13.Fill = false;
 			this.table1.Add (this.hbox1);
-			global::Gtk.Table.TableChild w21 = ((global::Gtk.Table.TableChild)(this.table1 [this.hbox1]));
-			w21.LeftAttach = ((uint)(1));
-			w21.RightAttach = ((uint)(2));
-			w21.YOptions = ((global::Gtk.AttachOptions)(4));
+			global::Gtk.Table.TableChild w14 = ((global::Gtk.Table.TableChild)(this.table1 [this.hbox1]));
+			w14.LeftAttach = ((uint)(1));
+			w14.RightAttach = ((uint)(2));
+			w14.YOptions = ((global::Gtk.AttachOptions)(4));
 			// Container child table1.Gtk.Table+TableChild
 			this.label1 = new global::Gtk.Label ();
 			this.label1.Name = "label1";
 			this.label1.Xalign = 0F;
 			this.label1.LabelProp = global::Mono.Unix.Catalog.GetString ("Folder");
 			this.table1.Add (this.label1);
-			global::Gtk.Table.TableChild w22 = ((global::Gtk.Table.TableChild)(this.table1 [this.label1]));
-			w22.XOptions = ((global::Gtk.AttachOptions)(4));
-			w22.YOptions = ((global::Gtk.AttachOptions)(4));
+			global::Gtk.Table.TableChild w15 = ((global::Gtk.Table.TableChild)(this.table1 [this.label1]));
+			w15.XOptions = ((global::Gtk.AttachOptions)(4));
+			w15.YOptions = ((global::Gtk.AttachOptions)(4));
 			// Container child table1.Gtk.Table+TableChild
 			this.label4 = new global::Gtk.Label ();
 			this.label4.Name = "label4";
@@ -250,22 +241,22 @@ namespace Trilogic
 			this.label4.LabelProp = global::Mono.Unix.Catalog.GetString ("Host");
 			this.label4.Justify = ((global::Gtk.Justification)(1));
 			this.table1.Add (this.label4);
-			global::Gtk.Table.TableChild w23 = ((global::Gtk.Table.TableChild)(this.table1 [this.label4]));
-			w23.TopAttach = ((uint)(1));
-			w23.BottomAttach = ((uint)(2));
-			w23.XOptions = ((global::Gtk.AttachOptions)(4));
-			w23.YOptions = ((global::Gtk.AttachOptions)(4));
+			global::Gtk.Table.TableChild w16 = ((global::Gtk.Table.TableChild)(this.table1 [this.label4]));
+			w16.TopAttach = ((uint)(1));
+			w16.BottomAttach = ((uint)(2));
+			w16.XOptions = ((global::Gtk.AttachOptions)(4));
+			w16.YOptions = ((global::Gtk.AttachOptions)(4));
 			// Container child table1.Gtk.Table+TableChild
 			this.label5 = new global::Gtk.Label ();
 			this.label5.Name = "label5";
 			this.label5.Xalign = 0F;
 			this.label5.LabelProp = global::Mono.Unix.Catalog.GetString ("User");
 			this.table1.Add (this.label5);
-			global::Gtk.Table.TableChild w24 = ((global::Gtk.Table.TableChild)(this.table1 [this.label5]));
-			w24.TopAttach = ((uint)(2));
-			w24.BottomAttach = ((uint)(3));
-			w24.XOptions = ((global::Gtk.AttachOptions)(4));
-			w24.YOptions = ((global::Gtk.AttachOptions)(4));
+			global::Gtk.Table.TableChild w17 = ((global::Gtk.Table.TableChild)(this.table1 [this.label5]));
+			w17.TopAttach = ((uint)(2));
+			w17.BottomAttach = ((uint)(3));
+			w17.XOptions = ((global::Gtk.AttachOptions)(4));
+			w17.YOptions = ((global::Gtk.AttachOptions)(4));
 			// Container child table1.Gtk.Table+TableChild
 			this.label7 = new global::Gtk.Label ();
 			this.label7.Name = "label7";
@@ -273,27 +264,27 @@ namespace Trilogic
 			this.label7.LabelProp = global::Mono.Unix.Catalog.GetString ("Password");
 			this.label7.Justify = ((global::Gtk.Justification)(1));
 			this.table1.Add (this.label7);
-			global::Gtk.Table.TableChild w25 = ((global::Gtk.Table.TableChild)(this.table1 [this.label7]));
-			w25.TopAttach = ((uint)(3));
-			w25.BottomAttach = ((uint)(4));
-			w25.XOptions = ((global::Gtk.AttachOptions)(4));
-			w25.YOptions = ((global::Gtk.AttachOptions)(4));
+			global::Gtk.Table.TableChild w18 = ((global::Gtk.Table.TableChild)(this.table1 [this.label7]));
+			w18.TopAttach = ((uint)(3));
+			w18.BottomAttach = ((uint)(4));
+			w18.XOptions = ((global::Gtk.AttachOptions)(4));
+			w18.YOptions = ((global::Gtk.AttachOptions)(4));
 			// Container child table1.Gtk.Table+TableChild
 			this.label8 = new global::Gtk.Label ();
 			this.label8.Name = "label8";
 			this.label8.Xalign = 0F;
 			this.label8.LabelProp = global::Mono.Unix.Catalog.GetString ("Database");
 			this.table1.Add (this.label8);
-			global::Gtk.Table.TableChild w26 = ((global::Gtk.Table.TableChild)(this.table1 [this.label8]));
-			w26.TopAttach = ((uint)(4));
-			w26.BottomAttach = ((uint)(5));
-			w26.XOptions = ((global::Gtk.AttachOptions)(4));
-			w26.YOptions = ((global::Gtk.AttachOptions)(4));
+			global::Gtk.Table.TableChild w19 = ((global::Gtk.Table.TableChild)(this.table1 [this.label8]));
+			w19.TopAttach = ((uint)(4));
+			w19.BottomAttach = ((uint)(5));
+			w19.XOptions = ((global::Gtk.AttachOptions)(4));
+			w19.YOptions = ((global::Gtk.AttachOptions)(4));
 			this.vbox5.Add (this.table1);
-			global::Gtk.Box.BoxChild w27 = ((global::Gtk.Box.BoxChild)(this.vbox5 [this.table1]));
-			w27.Position = 0;
-			w27.Expand = false;
-			w27.Fill = false;
+			global::Gtk.Box.BoxChild w20 = ((global::Gtk.Box.BoxChild)(this.vbox5 [this.table1]));
+			w20.Position = 0;
+			w20.Expand = false;
+			w20.Fill = false;
 			// Container child vbox5.Gtk.Box+BoxChild
 			this.buttonStartDiff = new global::Gtk.Button ();
 			this.buttonStartDiff.CanFocus = true;
@@ -301,10 +292,10 @@ namespace Trilogic
 			this.buttonStartDiff.UseUnderline = true;
 			this.buttonStartDiff.Label = global::Mono.Unix.Catalog.GetString ("Start Diff");
 			this.vbox5.Add (this.buttonStartDiff);
-			global::Gtk.Box.BoxChild w28 = ((global::Gtk.Box.BoxChild)(this.vbox5 [this.buttonStartDiff]));
-			w28.Position = 1;
-			w28.Expand = false;
-			w28.Fill = false;
+			global::Gtk.Box.BoxChild w21 = ((global::Gtk.Box.BoxChild)(this.vbox5 [this.buttonStartDiff]));
+			w21.Position = 1;
+			w21.Expand = false;
+			w21.Fill = false;
 			// Container child vbox5.Gtk.Box+BoxChild
 			this.buttonWriteToFile = new global::Gtk.Button ();
 			this.buttonWriteToFile.CanFocus = true;
@@ -312,13 +303,13 @@ namespace Trilogic
 			this.buttonWriteToFile.UseUnderline = true;
 			this.buttonWriteToFile.Label = global::Mono.Unix.Catalog.GetString ("Write To File");
 			this.vbox5.Add (this.buttonWriteToFile);
-			global::Gtk.Box.BoxChild w29 = ((global::Gtk.Box.BoxChild)(this.vbox5 [this.buttonWriteToFile]));
-			w29.Position = 2;
-			w29.Expand = false;
-			w29.Fill = false;
+			global::Gtk.Box.BoxChild w22 = ((global::Gtk.Box.BoxChild)(this.vbox5 [this.buttonWriteToFile]));
+			w22.Position = 2;
+			w22.Expand = false;
+			w22.Fill = false;
 			this.hpaned1.Add (this.vbox5);
-			global::Gtk.Paned.PanedChild w30 = ((global::Gtk.Paned.PanedChild)(this.hpaned1 [this.vbox5]));
-			w30.Resize = false;
+			global::Gtk.Paned.PanedChild w23 = ((global::Gtk.Paned.PanedChild)(this.hpaned1 [this.vbox5]));
+			w23.Resize = false;
 			// Container child hpaned1.Gtk.Paned+PanedChild
 			this.hbox5 = new global::Gtk.HBox ();
 			this.hbox5.Name = "hbox5";
@@ -333,8 +324,8 @@ namespace Trilogic
 			this.treeviewDB.Name = "treeviewDB";
 			this.GtkScrolledWindow.Add (this.treeviewDB);
 			this.hbox5.Add (this.GtkScrolledWindow);
-			global::Gtk.Box.BoxChild w32 = ((global::Gtk.Box.BoxChild)(this.hbox5 [this.GtkScrolledWindow]));
-			w32.Position = 0;
+			global::Gtk.Box.BoxChild w25 = ((global::Gtk.Box.BoxChild)(this.hbox5 [this.GtkScrolledWindow]));
+			w25.Position = 0;
 			// Container child hbox5.Gtk.Box+BoxChild
 			this.GtkScrolledWindow1 = new global::Gtk.ScrolledWindow ();
 			this.GtkScrolledWindow1.Name = "GtkScrolledWindow1";
@@ -345,15 +336,15 @@ namespace Trilogic
 			this.treeviewFile.Name = "treeviewFile";
 			this.GtkScrolledWindow1.Add (this.treeviewFile);
 			this.hbox5.Add (this.GtkScrolledWindow1);
-			global::Gtk.Box.BoxChild w34 = ((global::Gtk.Box.BoxChild)(this.hbox5 [this.GtkScrolledWindow1]));
-			w34.Position = 1;
+			global::Gtk.Box.BoxChild w27 = ((global::Gtk.Box.BoxChild)(this.hbox5 [this.GtkScrolledWindow1]));
+			w27.Position = 1;
 			this.hpaned1.Add (this.hbox5);
 			this.vbox2.Add (this.hpaned1);
-			global::Gtk.Box.BoxChild w36 = ((global::Gtk.Box.BoxChild)(this.vbox2 [this.hpaned1]));
-			w36.Position = 1;
+			global::Gtk.Box.BoxChild w29 = ((global::Gtk.Box.BoxChild)(this.vbox2 [this.hpaned1]));
+			w29.Position = 1;
 			this.vpaned1.Add (this.vbox2);
-			global::Gtk.Paned.PanedChild w37 = ((global::Gtk.Paned.PanedChild)(this.vpaned1 [this.vbox2]));
-			w37.Resize = false;
+			global::Gtk.Paned.PanedChild w30 = ((global::Gtk.Paned.PanedChild)(this.vpaned1 [this.vbox2]));
+			w30.Resize = false;
 			// Container child vpaned1.Gtk.Paned+PanedChild
 			this.GtkScrolledWindow2 = new global::Gtk.ScrolledWindow ();
 			this.GtkScrolledWindow2.Name = "GtkScrolledWindow2";
@@ -365,8 +356,8 @@ namespace Trilogic
 			this.GtkScrolledWindow2.Add (this.textviewLog);
 			this.vpaned1.Add (this.GtkScrolledWindow2);
 			this.vbox4.Add (this.vpaned1);
-			global::Gtk.Box.BoxChild w40 = ((global::Gtk.Box.BoxChild)(this.vbox4 [this.vpaned1]));
-			w40.Position = 1;
+			global::Gtk.Box.BoxChild w33 = ((global::Gtk.Box.BoxChild)(this.vbox4 [this.vpaned1]));
+			w33.Position = 1;
 			this.Add (this.vbox4);
 			if ((this.Child != null)) {
 				this.Child.ShowAll ();
@@ -378,6 +369,7 @@ namespace Trilogic
 			this.ResizeChecked += new global::System.EventHandler (this.OnResizeChecked);
 			this.quitAction.Activated += new global::System.EventHandler (this.OnQuitActionActivated);
 			this.OptionsAction.Activated += new global::System.EventHandler (this.OnOptionsActionActivated);
+			this.comboShow.Changed += new global::System.EventHandler (this.OnComboShowChanged);
 			this.buttonOpenFolder.Clicked += new global::System.EventHandler (this.OnButtonOpenFolderClicked);
 			this.buttonStartDiff.Clicked += new global::System.EventHandler (this.OnButtonStartDiffClicked);
 		}

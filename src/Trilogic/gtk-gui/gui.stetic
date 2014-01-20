@@ -65,7 +65,7 @@
           <widget class="Gtk.VPaned" id="vpaned1">
             <property name="MemberName" />
             <property name="CanFocus">True</property>
-            <property name="Position">305</property>
+            <property name="Position">1</property>
             <property name="BorderWidth">5</property>
             <child>
               <widget class="Gtk.VBox" id="vbox2">
@@ -86,10 +86,13 @@
                       </packing>
                     </child>
                     <child>
-                      <widget class="Gtk.ComboBox" id="combobox1">
+                      <widget class="Gtk.ComboBox" id="comboShow">
                         <property name="MemberName" />
                         <property name="IsTextCombo">True</property>
-                        <property name="Items" translatable="yes" />
+                        <property name="Items">Show All
+Show Difference</property>
+                        <property name="Active">1</property>
+                        <signal name="Changed" handler="OnComboShowChanged" />
                       </widget>
                       <packing>
                         <property name="Position">1</property>
@@ -123,7 +126,7 @@
                   <widget class="Gtk.HPaned" id="hpaned1">
                     <property name="MemberName" />
                     <property name="CanFocus">True</property>
-                    <property name="Position">298</property>
+                    <property name="Position">1</property>
                     <child>
                       <widget class="Gtk.VBox" id="vbox5">
                         <property name="MemberName" />

@@ -30,6 +30,16 @@ namespace Trilogic
         private AppSettings appSettings;
 
         /// <summary>
+        /// The list file.
+        /// </summary>
+        private List<string> listFile = new List<string>();
+
+        /// <summary>
+        /// The list database schema.
+        /// </summary>
+        private List<string> listDB = new List<string>();
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="Trilogic.MainWindow"/> class.
         /// </summary>
         public MainWindow() : base(Gtk.WindowType.Toplevel)
@@ -68,6 +78,9 @@ namespace Trilogic
 
             column.AddAttribute(renderer, "text", 0);
             columnFile.AddAttribute(renderer2, "text", 0);
+
+            column.AddAttribute(renderer, "background", 1);
+            columnFile.AddAttribute(renderer2, "background", 1);
 
             GtkLogService.Instance.Write("Insert the username and start the diff");
         }
@@ -169,41 +182,111 @@ namespace Trilogic
         /// <param name="e">Event arguments.</param>
         protected void OnButtonStartDiffClicked(object sender, EventArgs e)
         {
+            string dir = this.entryFolder.Text;
+            string tableDir = dir + "/table";
+
             this.SaveConfiguration();
 
-            // prepare the list store
-            ListStore list = new ListStore(typeof(string));
-            treeviewDB.Model = list;
-
-            ListStore list2 = new ListStore(typeof(string));
-            treeviewFile.Model = list2;
-
             SqlServerAccess sql = new SqlServerAccess(entryHost.Text, entryUser.Text, entryPassword.Text, entryDatabase.Text);
-            List<string> listTable = sql.GetTables();
+            this.listDB = sql.GetTables();
 
-            foreach (string str in listTable)
+            // Prepare the file list
+            this.listFile = new List<string>();
+            foreach (string file in Directory.GetFiles(tableDir))
             {
-                list.AppendValues(str);
+                string tableName = file.Replace("\\", "/").Substring(tableDir.Length + 1);
+                tableName = tableName.Replace(".Table.sql", "");
+                this.listFile.Add(tableName);
             }
 
-            string dir = this.entryFolder.Text;
             if (!Directory.Exists(dir))
             {
                 GtkLogService.Instance.Write(string.Concat("Failed to get directory ", dir));
                 return;
             }
 
-            string tableDir = dir + "/table";
             if (!Directory.Exists(tableDir))
             {
                 GtkLogService.Instance.Write(string.Concat("Failed to get table directory ", tableDir));
                 return;
             }
 
-            foreach (string file in Directory.GetFiles(tableDir))
+            this.ShowProcessedList();
+        }
+
+        /// <summary>
+        /// Raises the combo show changed event.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">Event arguments.</param>
+        protected void OnComboShowChanged(object sender, EventArgs e)
+        {
+            this.ShowProcessedList();
+        }
+
+        /// <summary>
+        /// Shows the processed list.
+        /// </summary>
+        protected void ShowProcessedList()
+        {
+            // Prepare the list store
+            ListStore list = new ListStore(typeof(string), typeof(string));
+            this.treeviewDB.Model = list;
+
+            ListStore list2 = new ListStore(typeof(string), typeof(string));
+            this.treeviewFile.Model = list2;
+
+            List<string> listViewFile = new List<string>();
+            List<string> listViewDB = new List<string>();
+            if (this.comboShow.Active == 0)
             {
-                list2.AppendValues(file.Replace("\\", "/").Substring(tableDir.Length + 1));
+                listViewFile = this.listFile;
+                listViewDB = this.listDB;
             }
+            else if (this.comboShow.Active == 1)
+            {
+                foreach (string file in this.listFile)
+                {
+                    if (!this.listDB.Contains(file))
+                    {
+                        listViewFile.Add(file);
+                    }
+                }
+
+                foreach (string str in this.listDB)
+                {
+                    if (!this.listFile.Contains(str))
+                    {
+                        listViewDB.Add(str);
+                    }
+                }
+            }
+
+            // Render to the tree view
+            foreach (string file in listViewFile)
+            {
+                // Compare current file to the SQL Schema
+                string color = "#ffffff";
+                if (!listViewDB.Contains(file))
+                {
+                    color = "#99ff99";
+                }
+
+                list2.AppendValues(file, color);
+            }
+
+            foreach (string str in listViewDB)
+            {
+                // Compare the current SQL Schema to the file
+                string color = "#ffffff";
+                if (!listViewFile.Contains(str))
+                {
+                    color = "#99ff99";
+                }
+
+                list.AppendValues(str, color);
+            }
+
         }
     }
 }
