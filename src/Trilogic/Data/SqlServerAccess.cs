@@ -69,18 +69,11 @@ namespace Trilogic.Data
         /// <returns>The tables.</returns>
         public List<string> GetTables()
         {
-            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
-            builder.DataSource = this.Host;
-            builder.UserID = this.Username;
-            builder.Password = this.Password;
-            builder.ConnectTimeout = 5;
-
             List<string> list = new List<string>();
 
-            using (SqlConnection connection = new SqlConnection(builder.ToString()))
+            using (SqlConnection connection = this.CreateConnection())
             {
-                this.Logger.Write("Opening connection");
-                connection.Open();
+                this.Logger.Write("Opening connection for table list");
 
                 SqlCommand command = connection.CreateCommand();
                 command.CommandText = "SELECT h.name + '.' + s.name AS name FROM sys.tables s INNER JOIN sys.schemas h ON h.schema_id = s.schema_id WHERE s.type = 'U' ORDER BY s.name";
@@ -99,6 +92,55 @@ namespace Trilogic.Data
             }
 
             return list;
+        }
+
+        /// <summary>
+        /// Gets the stored procedure.
+        /// </summary>
+        /// <returns>The stored procedure.</returns>
+        public List<string> GetStoredProcedure()
+        {
+            List<string> list = new List<string>();
+
+            using (SqlConnection connection = this.CreateConnection())
+            {
+                this.Logger.Write("Opening connection for stored procedure list");
+
+                SqlCommand command = connection.CreateCommand();
+                command.CommandText = "SELECT h.name + '.' + s.name AS name FROM sys.procedures s INNER JOIN sys.schemas h ON h.schema_id = s.schema_id WHERE s.type = 'P' ORDER BY s.name";
+                command.CommandType = CommandType.Text;
+
+                this.Logger.Write("Sending command");
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        list.Add(reader["name"].ToString());
+                    }
+                }
+
+                this.Logger.Write("Process finished");
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// Creates the connection.
+        /// </summary>
+        /// <returns>The connection.</returns>
+        protected SqlConnection CreateConnection()
+        {
+            SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder();
+            builder.DataSource = this.Host;
+            builder.UserID = this.Username;
+            builder.Password = this.Password;
+            builder.ConnectTimeout = 5;
+
+            SqlConnection connection = new SqlConnection(builder.ToString());
+            connection.Open();
+
+            return connection;
         }
     }
 }

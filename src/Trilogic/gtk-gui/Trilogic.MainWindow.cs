@@ -16,7 +16,7 @@ namespace Trilogic
 		private global::Gtk.HBox hbox6;
 		private global::Gtk.Fixed fixed1;
 		private global::Gtk.ComboBox comboShow;
-		private global::Gtk.ComboBox combobox2;
+		private global::Gtk.ComboBox comboType;
 		private global::Gtk.HPaned hpaned1;
 		private global::Gtk.VBox vbox5;
 		private global::Gtk.Table table1;
@@ -85,7 +85,7 @@ namespace Trilogic
 			this.vpaned1 = new global::Gtk.VPaned ();
 			this.vpaned1.CanFocus = true;
 			this.vpaned1.Name = "vpaned1";
-			this.vpaned1.Position = 1;
+			this.vpaned1.Position = 375;
 			this.vpaned1.BorderWidth = ((uint)(5));
 			// Container child vpaned1.Gtk.Paned+PanedChild
 			this.vbox2 = new global::Gtk.VBox ();
@@ -114,10 +114,15 @@ namespace Trilogic
 			w4.Expand = false;
 			w4.Fill = false;
 			// Container child hbox6.Gtk.Box+BoxChild
-			this.combobox2 = global::Gtk.ComboBox.NewText ();
-			this.combobox2.Name = "combobox2";
-			this.hbox6.Add (this.combobox2);
-			global::Gtk.Box.BoxChild w5 = ((global::Gtk.Box.BoxChild)(this.hbox6 [this.combobox2]));
+			this.comboType = global::Gtk.ComboBox.NewText ();
+			this.comboType.AppendText (global::Mono.Unix.Catalog.GetString ("All"));
+			this.comboType.AppendText (global::Mono.Unix.Catalog.GetString ("Table"));
+			this.comboType.AppendText (global::Mono.Unix.Catalog.GetString ("Stored Procedure"));
+			this.comboType.AppendText (global::Mono.Unix.Catalog.GetString ("Data"));
+			this.comboType.Name = "comboType";
+			this.comboType.Active = 0;
+			this.hbox6.Add (this.comboType);
+			global::Gtk.Box.BoxChild w5 = ((global::Gtk.Box.BoxChild)(this.hbox6 [this.comboType]));
 			w5.Position = 2;
 			w5.Expand = false;
 			w5.Fill = false;
@@ -130,7 +135,7 @@ namespace Trilogic
 			this.hpaned1 = new global::Gtk.HPaned ();
 			this.hpaned1.CanFocus = true;
 			this.hpaned1.Name = "hpaned1";
-			this.hpaned1.Position = 1;
+			this.hpaned1.Position = 300;
 			// Container child hpaned1.Gtk.Paned+PanedChild
 			this.vbox5 = new global::Gtk.VBox ();
 			this.vbox5.Name = "vbox5";
@@ -370,8 +375,11 @@ namespace Trilogic
 			this.quitAction.Activated += new global::System.EventHandler (this.OnQuitActionActivated);
 			this.OptionsAction.Activated += new global::System.EventHandler (this.OnOptionsActionActivated);
 			this.comboShow.Changed += new global::System.EventHandler (this.OnComboShowChanged);
+			this.comboType.Changed += new global::System.EventHandler (this.OnComboTypeChanged);
 			this.buttonOpenFolder.Clicked += new global::System.EventHandler (this.OnButtonOpenFolderClicked);
 			this.buttonStartDiff.Clicked += new global::System.EventHandler (this.OnButtonStartDiffClicked);
+			this.treeviewDB.RowActivated += new global::Gtk.RowActivatedHandler (this.OnTreeviewRowActivated);
+			this.treeviewFile.RowActivated += new global::Gtk.RowActivatedHandler (this.OnTreeviewRowActivated);
 		}
 	}
 }

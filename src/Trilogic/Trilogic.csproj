@@ -76,6 +76,9 @@
     <Compile Include="Data\DirectoryAccess.cs" />
     <Compile Include="Data\SqlServerAccess.cs" />
     <Compile Include="Data\DataAccessBase.cs" />
+    <Compile Include="Data\SchemaData.cs" />
+    <Compile Include="CompareWindow.cs" />
+    <Compile Include="gtk-gui\Trilogic.CompareWindow.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

@@ -30,14 +30,24 @@ namespace Trilogic
         private AppSettings appSettings;
 
         /// <summary>
-        /// The list file.
+        /// The table list from file.
         /// </summary>
-        private List<string> listFile = new List<string>();
+        private List<string> listFileTables = new List<string>();
 
         /// <summary>
-        /// The list database schema.
+        /// The procedure list from file.
         /// </summary>
-        private List<string> listDB = new List<string>();
+        private List<string> listFileProcedures = new List<string>();
+
+        /// <summary>
+        /// The list of database schema.
+        /// </summary>
+        private List<string> listDBTables = new List<string>();
+
+        /// <summary>
+        /// The list of database procedures.
+        /// </summary>
+        private List<string> listDBProcedures = new List<string>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Trilogic.MainWindow"/> class.
@@ -50,7 +60,6 @@ namespace Trilogic
 
             this.entryHost.Text = this.appSettings.DBHost;
             this.entryUser.Text = this.appSettings.DBUser;
-            //this.entryPassword.Text = this.appSettings.DBPassword;
             this.entryDatabase.Text = this.appSettings.DBName;
             this.entryFolder.Text = this.appSettings.DirectoryPath;
 
@@ -65,16 +74,20 @@ namespace Trilogic
             TreeViewColumn columnDB = new TreeViewColumn();
             TreeViewColumn columnDBToggle = new TreeViewColumn();
             TreeViewColumn columnDBStatus = new TreeViewColumn();
+            TreeViewColumn columnDBType = new TreeViewColumn();
             TreeViewColumn columnFile = new TreeViewColumn();
             TreeViewColumn columnFileToggle = new TreeViewColumn();
             TreeViewColumn columnFileStatus = new TreeViewColumn();
+            TreeViewColumn columnFileType = new TreeViewColumn();
 
             columnDB.Title = "Database Side";
             columnFile.Title = "File Side";
-            columnDBToggle.Title = "";
-            columnFileToggle.Title = "";
+            columnDBToggle.Title = string.Empty;
+            columnFileToggle.Title = string.Empty;
             columnDBStatus.Title = "S";
             columnFileStatus.Title = "S";
+            columnDBType.Title = "Type";
+            columnFileType.Title = "Type";
 
             columnDBToggle.FixedWidth = 20;
             columnFileToggle.FixedWidth = 20;
@@ -84,9 +97,11 @@ namespace Trilogic
             this.treeviewDB.AppendColumn(columnDBToggle);
             this.treeviewDB.AppendColumn(columnDBStatus);
             this.treeviewDB.AppendColumn(columnDB);
+            this.treeviewDB.AppendColumn(columnDBType);
             this.treeviewFile.AppendColumn(columnFileToggle);
             this.treeviewFile.AppendColumn(columnFileStatus);
             this.treeviewFile.AppendColumn(columnFile);
+            this.treeviewFile.AppendColumn(columnFileType);
 
             CellRendererText renderer = new CellRendererText();
             CellRendererText renderer2 = new CellRendererText();
@@ -94,13 +109,17 @@ namespace Trilogic
             CellRendererToggle toggleFile = new CellRendererToggle() { Activatable = true };
             CellRendererText statusDB = new CellRendererText();
             CellRendererText statusFile = new CellRendererText();
+            CellRendererText typeDB = new CellRendererText();
+            CellRendererText typeFile = new CellRendererText();
 
             columnDB.PackStart(renderer, false);
             columnDBStatus.PackStart(statusDB, false);
             columnDBToggle.PackStart(toggleDB, true);
+            columnDBType.PackEnd(typeDB, false);
             columnFile.PackStart(renderer2, false);
             columnFileStatus.PackStart(statusFile, false);
             columnFileToggle.PackStart(toggleFile, true);
+            columnFileType.PackEnd(typeFile, false);
 
             columnDB.AddAttribute(renderer, "text", 0);
             columnFile.AddAttribute(renderer2, "text", 0);
@@ -114,18 +133,23 @@ namespace Trilogic
             columnDBStatus.AddAttribute(statusDB, "text", 3);
             columnFileStatus.AddAttribute(statusFile, "text", 3);
 
+            columnDBType.AddAttribute(typeDB, "text", 4);
+            columnFileType.AddAttribute(typeFile, "text", 4);
+
             // Set toggle signal
-            toggleDB.Toggled += (object o, ToggledArgs args) => {
+            toggleDB.Toggled += (object o, ToggledArgs args) =>
+            {
                 TreeIter iter;
                 this.treeviewDB.Model.GetIterFromString(out iter, args.Path);
-                bool enable = (bool) this.treeviewDB.Model.GetValue(iter, 2);
+                bool enable = (bool)this.treeviewDB.Model.GetValue(iter, 2);
                 this.treeviewDB.Model.SetValue(iter, 2, !enable);
             };
 
-            toggleFile.Toggled += (object o, ToggledArgs args) => {
+            toggleFile.Toggled += (object o, ToggledArgs args) =>
+            {
                 TreeIter iter;
                 this.treeviewFile.Model.GetIterFromString(out iter, args.Path);
-                bool enable = (bool) this.treeviewFile.Model.GetValue(iter, 2);
+                bool enable = (bool)this.treeviewFile.Model.GetValue(iter, 2);
                 this.treeviewFile.Model.SetValue(iter, 2, !enable);
             };
 
@@ -231,19 +255,29 @@ namespace Trilogic
         {
             string dir = this.entryFolder.Text;
             string tableDir = dir + "/table";
+            string procedureDir = dir + "/proc";
 
             this.SaveConfiguration();
 
             SqlServerAccess sql = new SqlServerAccess(entryHost.Text, entryUser.Text, entryPassword.Text, entryDatabase.Text);
-            this.listDB = sql.GetTables();
+            this.listDBTables = sql.GetTables();
+            this.listDBProcedures = sql.GetStoredProcedure();
 
             // Prepare the file list
-            this.listFile = new List<string>();
+            this.listFileTables = new List<string>();
             foreach (string file in Directory.GetFiles(tableDir))
             {
                 string tableName = file.Replace("\\", "/").Substring(tableDir.Length + 1);
-                tableName = tableName.Replace(".Table.sql", "");
-                this.listFile.Add(tableName);
+                tableName = tableName.Replace(".Table.sql", string.Empty);
+                this.listFileTables.Add(tableName);
+            }
+
+            this.listFileProcedures = new List<string>();
+            foreach (string file in Directory.GetFiles(procedureDir))
+            {
+                string procedureName = file.Replace("\\", "/").Substring(procedureDir.Length + 1);
+                procedureName = procedureName.Replace(".Procedure.sql", string.Empty);
+                this.listFileProcedures.Add(procedureName);
             }
 
             if (!Directory.Exists(dir))
@@ -277,71 +311,148 @@ namespace Trilogic
         protected void ShowProcessedList()
         {
             // Prepare the list store
-            ListStore list = new ListStore(typeof(string), typeof(string), typeof(bool), typeof(string));
+            ListStore list = new ListStore(typeof(string), typeof(string), typeof(bool), typeof(string), typeof(string));
             this.treeviewDB.Model = list;
 
-            ListStore list2 = new ListStore(typeof(string), typeof(string), typeof(bool), typeof(string));
+            ListStore list2 = new ListStore(typeof(string), typeof(string), typeof(bool), typeof(string), typeof(string));
             this.treeviewFile.Model = list2;
 
-            List<string> listViewFile = new List<string>();
-            List<string> listViewDB = new List<string>();
-            if (this.comboShow.Active == 0)
+            List<SchemaData> listViewFile = new List<SchemaData>();
+            List<SchemaData> listViewDB = new List<SchemaData>();
+
+            // Table list
+            foreach (string table in this.listFileTables)
             {
-                listViewFile = this.listFile;
-                listViewDB = this.listDB;
-            }
-            else if (this.comboShow.Active == 1)
-            {
-                foreach (string file in this.listFile)
+                SchemaData schema = new SchemaData() { Name = table, Type = SchemaDataType.Table };
+                if (!this.listDBTables.Contains(table))
                 {
-                    if (!this.listDB.Contains(file))
-                    {
-                        listViewFile.Add(file);
-                    }
+                    schema.Status = SchemaDataStatus.Added;
                 }
 
-                foreach (string str in this.listDB)
+                listViewFile.Add(schema);
+            }
+
+            foreach (string table in this.listDBTables)
+            {
+                SchemaData schema = new SchemaData() { Name = table, Type = SchemaDataType.Table };
+                if (!this.listFileTables.Contains(table))
                 {
-                    if (!this.listFile.Contains(str))
-                    {
-                        listViewDB.Add(str);
-                    }
+                    schema.Status = SchemaDataStatus.Added;
                 }
+
+                listViewDB.Add(schema);
+            }
+
+            // SP list
+            foreach (string sp in this.listFileProcedures)
+            {
+                SchemaData schema = new SchemaData() { Name = sp, Type = SchemaDataType.StoredProcedure };
+                if (!this.listDBProcedures.Contains(sp))
+                {
+                    schema.Status = SchemaDataStatus.Added;
+                }
+
+                listViewFile.Add(schema);
+            }
+
+            foreach (string sp in this.listDBProcedures)
+            {
+                SchemaData schema = new SchemaData() { Name = sp, Type = SchemaDataType.StoredProcedure };
+                if (!this.listFileProcedures.Contains(sp))
+                {
+                    schema.Status = SchemaDataStatus.Added;
+                }
+
+                listViewDB.Add(schema);
             }
 
             // Render to the tree view
-            foreach (string file in listViewFile)
+            foreach (SchemaData file in listViewFile)
             {
+                if (comboShow.Active == 1 && file.Status == SchemaDataStatus.None)
+                {
+                    continue;
+                }
+
+                if (comboType.Active == 1 && file.Type != SchemaDataType.Table)
+                {
+                    continue;
+                }
+
+                if (comboType.Active == 2 && file.Type != SchemaDataType.StoredProcedure)
+                {
+                    continue;
+                }
+
                 // Compare current file to the SQL Schema
                 string color = "#ffffff";
                 bool check = false;
-                string status = "";
-                if (!listViewDB.Contains(file))
+                string status = string.Empty;
+                if (file.Status == SchemaDataStatus.Added)
                 {
                     color = "#99ff99";
                     check = true;
                     status = "+";
                 }
 
-                list2.AppendValues(file, color, check, status);
+                list2.AppendValues(file.Name, color, check, status, file.Type.ToString());
             }
 
-            foreach (string str in listViewDB)
+            foreach (SchemaData str in listViewDB)
             {
+                if (comboShow.Active == 1 && str.Status == SchemaDataStatus.None)
+                {
+                    continue;
+                }
+
+                if (comboType.Active == 1 && str.Type != SchemaDataType.Table)
+                {
+                    continue;
+                }
+
+                if (comboType.Active == 2 && str.Type != SchemaDataType.StoredProcedure)
+                {
+                    continue;
+                }
+
                 // Compare the current SQL Schema to the file
                 string color = "#ffffff";
                 bool check = false;
-                string status = "";
-                if (!listViewFile.Contains(str))
+                string status = string.Empty;
+                if (str.Status == SchemaDataStatus.Added)
                 {
                     color = "#99ff99";
                     check = true;
                     status = "+";
                 }
 
-                list.AppendValues(str, color, check, status);
+                list.AppendValues(str.Name, color, check, status, str.Type.ToString());
             }
+        }
 
+        /// <summary>
+        /// Raises the combo type changed event.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">Event arguments.</param>
+        protected void OnComboTypeChanged(object sender, EventArgs e)
+        {
+            this.ShowProcessedList();
+        }
+
+        /// <summary>
+        /// Raises the treeview row activated event.
+        /// </summary>
+        /// <param name="o">O.</param>
+        /// <param name="args">Arguments.</param>
+        protected void OnTreeviewRowActivated(object o, RowActivatedArgs args)
+        {
+            TreeView tree = (TreeView)o;
+            TreeIter iter;
+            tree.Model.GetIter(out iter, args.Path);
+            string name = tree.Model.GetValue(iter, 0).ToString();
+
+            new CompareWindow(this, name).Show();
         }
     }
 }
