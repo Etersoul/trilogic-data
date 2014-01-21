@@ -50,7 +50,7 @@ namespace Trilogic
 
             this.entryHost.Text = this.appSettings.DBHost;
             this.entryUser.Text = this.appSettings.DBUser;
-            this.entryPassword.Text = this.appSettings.DBPassword;
+            //this.entryPassword.Text = this.appSettings.DBPassword;
             this.entryDatabase.Text = this.appSettings.DBName;
             this.entryFolder.Text = this.appSettings.DirectoryPath;
 
@@ -62,25 +62,72 @@ namespace Trilogic
             this.buffer = textviewLog.Buffer;
             GtkLogService.Instance.Buffer = this.buffer;
 
-            TreeViewColumn column = new TreeViewColumn();
+            TreeViewColumn columnDB = new TreeViewColumn();
+            TreeViewColumn columnDBToggle = new TreeViewColumn();
+            TreeViewColumn columnDBStatus = new TreeViewColumn();
             TreeViewColumn columnFile = new TreeViewColumn();
+            TreeViewColumn columnFileToggle = new TreeViewColumn();
+            TreeViewColumn columnFileStatus = new TreeViewColumn();
 
-            column.Title = "Table Name";
-            columnFile.Title = "File Name";
-            this.treeviewDB.AppendColumn(column);
+            columnDB.Title = "Database Side";
+            columnFile.Title = "File Side";
+            columnDBToggle.Title = "";
+            columnFileToggle.Title = "";
+            columnDBStatus.Title = "S";
+            columnFileStatus.Title = "S";
+
+            columnDBToggle.FixedWidth = 20;
+            columnFileToggle.FixedWidth = 20;
+            columnDBStatus.FixedWidth = 20;
+            columnFileStatus.FixedWidth = 20;
+
+            this.treeviewDB.AppendColumn(columnDBToggle);
+            this.treeviewDB.AppendColumn(columnDBStatus);
+            this.treeviewDB.AppendColumn(columnDB);
+            this.treeviewFile.AppendColumn(columnFileToggle);
+            this.treeviewFile.AppendColumn(columnFileStatus);
             this.treeviewFile.AppendColumn(columnFile);
 
             CellRendererText renderer = new CellRendererText();
             CellRendererText renderer2 = new CellRendererText();
+            CellRendererToggle toggleDB = new CellRendererToggle() { Activatable = true };
+            CellRendererToggle toggleFile = new CellRendererToggle() { Activatable = true };
+            CellRendererText statusDB = new CellRendererText();
+            CellRendererText statusFile = new CellRendererText();
 
-            column.PackStart(renderer, true);
-            columnFile.PackStart(renderer2, true);
+            columnDB.PackStart(renderer, false);
+            columnDBStatus.PackStart(statusDB, false);
+            columnDBToggle.PackStart(toggleDB, true);
+            columnFile.PackStart(renderer2, false);
+            columnFileStatus.PackStart(statusFile, false);
+            columnFileToggle.PackStart(toggleFile, true);
 
-            column.AddAttribute(renderer, "text", 0);
+            columnDB.AddAttribute(renderer, "text", 0);
             columnFile.AddAttribute(renderer2, "text", 0);
 
-            column.AddAttribute(renderer, "background", 1);
+            columnDB.AddAttribute(renderer, "background", 1);
             columnFile.AddAttribute(renderer2, "background", 1);
+            
+            columnDBToggle.AddAttribute(toggleDB, "active", 2);
+            columnFileToggle.AddAttribute(toggleFile, "active", 2);
+
+            columnDBStatus.AddAttribute(statusDB, "text", 3);
+            columnFileStatus.AddAttribute(statusFile, "text", 3);
+
+            // Set toggle signal
+            toggleDB.Toggled += (object o, ToggledArgs args) => {
+                TreeIter iter;
+                this.treeviewDB.Model.GetIterFromString(out iter, args.Path);
+                bool enable = (bool) this.treeviewDB.Model.GetValue(iter, 2);
+                this.treeviewDB.Model.SetValue(iter, 2, !enable);
+            };
+
+            toggleFile.Toggled += (object o, ToggledArgs args) => {
+                TreeIter iter;
+                this.treeviewFile.Model.GetIterFromString(out iter, args.Path);
+                bool enable = (bool) this.treeviewFile.Model.GetValue(iter, 2);
+                this.treeviewFile.Model.SetValue(iter, 2, !enable);
+            };
 
             GtkLogService.Instance.Write("Insert the username and start the diff");
         }
@@ -230,10 +277,10 @@ namespace Trilogic
         protected void ShowProcessedList()
         {
             // Prepare the list store
-            ListStore list = new ListStore(typeof(string), typeof(string));
+            ListStore list = new ListStore(typeof(string), typeof(string), typeof(bool), typeof(string));
             this.treeviewDB.Model = list;
 
-            ListStore list2 = new ListStore(typeof(string), typeof(string));
+            ListStore list2 = new ListStore(typeof(string), typeof(string), typeof(bool), typeof(string));
             this.treeviewFile.Model = list2;
 
             List<string> listViewFile = new List<string>();
@@ -267,24 +314,32 @@ namespace Trilogic
             {
                 // Compare current file to the SQL Schema
                 string color = "#ffffff";
+                bool check = false;
+                string status = "";
                 if (!listViewDB.Contains(file))
                 {
                     color = "#99ff99";
+                    check = true;
+                    status = "+";
                 }
 
-                list2.AppendValues(file, color);
+                list2.AppendValues(file, color, check, status);
             }
 
             foreach (string str in listViewDB)
             {
                 // Compare the current SQL Schema to the file
                 string color = "#ffffff";
+                bool check = false;
+                string status = "";
                 if (!listViewFile.Contains(str))
                 {
                     color = "#99ff99";
+                    check = true;
+                    status = "+";
                 }
 
-                list.AppendValues(str, color);
+                list.AppendValues(str, color, check, status);
             }
 
         }
