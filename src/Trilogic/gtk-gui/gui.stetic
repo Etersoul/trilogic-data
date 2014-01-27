@@ -5,7 +5,8 @@
   </configuration>
   <import>
     <widget-library name="glade-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
-    <widget-library name="../bin/Debug/OrionBackupTools.exe" internal="true" />
+    <widget-library name="C:/Program Files (x86)/Xamarin Studio/bin/Mono.TextEditor.dll" />
+    <widget-library name="../bin/Debug/TrilogicBackupTools.exe" internal="true" />
   </import>
   <widget class="Gtk.Window" id="Trilogic.MainWindow" design-size="840 527">
     <action-group name="Default">
@@ -966,10 +967,12 @@ Data</property>
       </widget>
     </child>
   </widget>
-  <widget class="Gtk.Window" id="Trilogic.CompareWindow" design-size="400 300">
+  <widget class="Gtk.Window" id="Trilogic.CompareWindow" design-size="1083 438">
     <property name="MemberName" />
     <property name="Title" translatable="yes">Compare Schema</property>
     <property name="WindowPosition">CenterOnParent</property>
+    <property name="DefaultWidth">800</property>
+    <property name="DefaultHeight">600</property>
     <child>
       <widget class="Gtk.VBox" id="vbox2">
         <property name="MemberName" />
@@ -982,43 +985,13 @@ Data</property>
             <property name="MemberName" />
             <property name="Spacing">6</property>
             <child>
-              <widget class="Gtk.ScrolledWindow" id="GtkScrolledWindow">
-                <property name="MemberName" />
-                <property name="ShadowType">In</property>
-                <child>
-                  <widget class="Gtk.TextView" id="textview1">
-                    <property name="MemberName" />
-                    <property name="CanFocus">True</property>
-                    <property name="ShowScrollbars">True</property>
-                    <property name="Text" translatable="yes" />
-                  </widget>
-                </child>
-              </widget>
-              <packing>
-                <property name="Position">0</property>
-                <property name="AutoSize">True</property>
-              </packing>
+              <placeholder />
             </child>
             <child>
               <placeholder />
             </child>
             <child>
-              <widget class="Gtk.ScrolledWindow" id="GtkScrolledWindow1">
-                <property name="MemberName" />
-                <property name="ShadowType">In</property>
-                <child>
-                  <widget class="Gtk.TextView" id="textview2">
-                    <property name="MemberName" />
-                    <property name="CanFocus">True</property>
-                    <property name="ShowScrollbars">True</property>
-                    <property name="Text" translatable="yes" />
-                  </widget>
-                </child>
-              </widget>
-              <packing>
-                <property name="Position">2</property>
-                <property name="AutoSize">True</property>
-              </packing>
+              <placeholder />
             </child>
           </widget>
           <packing>

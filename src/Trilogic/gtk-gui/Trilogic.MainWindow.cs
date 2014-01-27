@@ -85,7 +85,7 @@ namespace Trilogic
 			this.vpaned1 = new global::Gtk.VPaned ();
 			this.vpaned1.CanFocus = true;
 			this.vpaned1.Name = "vpaned1";
-			this.vpaned1.Position = 375;
+			this.vpaned1.Position = 374;
 			this.vpaned1.BorderWidth = ((uint)(5));
 			// Container child vpaned1.Gtk.Paned+PanedChild
 			this.vbox2 = new global::Gtk.VBox ();
@@ -135,7 +135,7 @@ namespace Trilogic
 			this.hpaned1 = new global::Gtk.HPaned ();
 			this.hpaned1.CanFocus = true;
 			this.hpaned1.Name = "hpaned1";
-			this.hpaned1.Position = 300;
+			this.hpaned1.Position = 314;
 			// Container child hpaned1.Gtk.Paned+PanedChild
 			this.vbox5 = new global::Gtk.VBox ();
 			this.vbox5.Name = "vbox5";

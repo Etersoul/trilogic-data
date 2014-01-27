@@ -62,6 +62,18 @@ namespace Trilogic
         }
 
         /// <summary>
+        /// Gets or sets the path of the file.
+        /// </summary>
+        /// <value>The path of the file.</value>
+        public string FilePath { get; set; }
+
+        /// <summary>
+        /// Gets or sets the object ID.
+        /// </summary>
+        /// <value>The object ID</value>
+        public int ObjectID { get; set; }
+
+        /// <summary>
         /// Gets or sets the name.
         /// </summary>
         /// <value>The name.</value>

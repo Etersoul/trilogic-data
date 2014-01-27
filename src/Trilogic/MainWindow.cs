@@ -32,22 +32,38 @@ namespace Trilogic
         /// <summary>
         /// The table list from file.
         /// </summary>
-        private List<string> listFileTables = new List<string>();
+        private SchemaCollection listFileTables = new SchemaCollection();
 
         /// <summary>
         /// The procedure list from file.
         /// </summary>
-        private List<string> listFileProcedures = new List<string>();
+        private SchemaCollection listFileProcedures = new SchemaCollection();
 
         /// <summary>
         /// The list of database schema.
         /// </summary>
-        private List<string> listDBTables = new List<string>();
+        private SchemaCollection listDBTables = new SchemaCollection();
 
         /// <summary>
         /// The list of database procedures.
         /// </summary>
-        private List<string> listDBProcedures = new List<string>();
+        private SchemaCollection listDBProcedures = new SchemaCollection();
+
+        /// <summary>
+        /// Gets or sets the database connection.
+        /// </summary>
+        /// <value>The sql.</value>
+        public SqlServerAccess Sql { get; set; }
+
+        /// <summary>
+        /// The combined file.
+        /// </summary>
+        private SchemaCollection combinedFile = new SchemaCollection();
+
+        /// <summary>
+        /// The combined DB.
+        /// </summary>
+        private SchemaCollection combinedDB = new SchemaCollection();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Trilogic.MainWindow"/> class.
@@ -259,25 +275,29 @@ namespace Trilogic
 
             this.SaveConfiguration();
 
-            SqlServerAccess sql = new SqlServerAccess(entryHost.Text, entryUser.Text, entryPassword.Text, entryDatabase.Text);
-            this.listDBTables = sql.GetTables();
-            this.listDBProcedures = sql.GetStoredProcedure();
+            this.Sql = new SqlServerAccess(entryHost.Text, entryUser.Text, entryPassword.Text, entryDatabase.Text);
+            this.listDBTables = this.Sql.GetTables();
+            this.listDBProcedures = this.Sql.GetStoredProcedure();
+
+            int id = 0;
 
             // Prepare the file list
-            this.listFileTables = new List<string>();
+            this.listFileTables = new SchemaCollection();
             foreach (string file in Directory.GetFiles(tableDir))
             {
+                id++;
                 string tableName = file.Replace("\\", "/").Substring(tableDir.Length + 1);
                 tableName = tableName.Replace(".Table.sql", string.Empty);
-                this.listFileTables.Add(tableName);
+                this.listFileTables.Add(new SchemaData { Name = tableName, ObjectID = id, Type = SchemaDataType.Table, FilePath = file });
             }
 
-            this.listFileProcedures = new List<string>();
+            this.listFileProcedures = new SchemaCollection();
             foreach (string file in Directory.GetFiles(procedureDir))
             {
+                id++;
                 string procedureName = file.Replace("\\", "/").Substring(procedureDir.Length + 1);
-                procedureName = procedureName.Replace(".Procedure.sql", string.Empty);
-                this.listFileProcedures.Add(procedureName);
+                procedureName = procedureName.Replace(".StoredProcedure.sql", string.Empty);
+                this.listFileProcedures.Add(new SchemaData { Name = procedureName, ObjectID = id, Type = SchemaDataType.StoredProcedure, FilePath = file });
             }
 
             if (!Directory.Exists(dir))
@@ -291,6 +311,45 @@ namespace Trilogic
                 GtkLogService.Instance.Write(string.Concat("Failed to get table directory ", tableDir));
                 return;
             }
+
+            // Add status to the list
+            foreach (SchemaData table in this.listFileTables)
+            {
+                if (!this.listDBTables.ContainsName(table))
+                {
+                    table.Status = SchemaDataStatus.Added;
+                }
+            }
+
+            foreach (SchemaData table in this.listDBTables)
+            {
+                if (!this.listFileTables.ContainsName(table))
+                {
+                    table.Status = SchemaDataStatus.Added;
+                }
+            }
+
+            // SP list
+            foreach (SchemaData sp in this.listFileProcedures)
+            {
+                if (!this.listDBProcedures.ContainsName(sp))
+                {
+                    sp.Status = SchemaDataStatus.Added;
+                }
+            }
+
+            foreach (SchemaData sp in this.listDBProcedures)
+            {
+                if (!this.listFileProcedures.ContainsName(sp))
+                {
+                    sp.Status = SchemaDataStatus.Added;
+                }
+            }
+
+            this.combinedFile.AppendCollection(this.listFileTables);
+            this.combinedFile.AppendCollection(this.listFileProcedures);
+            this.combinedDB.AppendCollection(this.listDBTables);
+            this.combinedDB.AppendCollection(this.listDBProcedures);
 
             this.ShowProcessedList();
         }
@@ -311,63 +370,14 @@ namespace Trilogic
         protected void ShowProcessedList()
         {
             // Prepare the list store
-            ListStore list = new ListStore(typeof(string), typeof(string), typeof(bool), typeof(string), typeof(string));
+            ListStore list = new ListStore(typeof(string), typeof(string), typeof(bool), typeof(string), typeof(string), typeof(SchemaData));
             this.treeviewDB.Model = list;
 
-            ListStore list2 = new ListStore(typeof(string), typeof(string), typeof(bool), typeof(string), typeof(string));
+            ListStore list2 = new ListStore(typeof(string), typeof(string), typeof(bool), typeof(string), typeof(string), typeof(SchemaData));
             this.treeviewFile.Model = list2;
 
-            List<SchemaData> listViewFile = new List<SchemaData>();
-            List<SchemaData> listViewDB = new List<SchemaData>();
-
-            // Table list
-            foreach (string table in this.listFileTables)
-            {
-                SchemaData schema = new SchemaData() { Name = table, Type = SchemaDataType.Table };
-                if (!this.listDBTables.Contains(table))
-                {
-                    schema.Status = SchemaDataStatus.Added;
-                }
-
-                listViewFile.Add(schema);
-            }
-
-            foreach (string table in this.listDBTables)
-            {
-                SchemaData schema = new SchemaData() { Name = table, Type = SchemaDataType.Table };
-                if (!this.listFileTables.Contains(table))
-                {
-                    schema.Status = SchemaDataStatus.Added;
-                }
-
-                listViewDB.Add(schema);
-            }
-
-            // SP list
-            foreach (string sp in this.listFileProcedures)
-            {
-                SchemaData schema = new SchemaData() { Name = sp, Type = SchemaDataType.StoredProcedure };
-                if (!this.listDBProcedures.Contains(sp))
-                {
-                    schema.Status = SchemaDataStatus.Added;
-                }
-
-                listViewFile.Add(schema);
-            }
-
-            foreach (string sp in this.listDBProcedures)
-            {
-                SchemaData schema = new SchemaData() { Name = sp, Type = SchemaDataType.StoredProcedure };
-                if (!this.listFileProcedures.Contains(sp))
-                {
-                    schema.Status = SchemaDataStatus.Added;
-                }
-
-                listViewDB.Add(schema);
-            }
-
             // Render to the tree view
-            foreach (SchemaData file in listViewFile)
+            foreach (SchemaData file in this.combinedFile)
             {
                 if (comboShow.Active == 1 && file.Status == SchemaDataStatus.None)
                 {
@@ -395,10 +405,10 @@ namespace Trilogic
                     status = "+";
                 }
 
-                list2.AppendValues(file.Name, color, check, status, file.Type.ToString());
+                list2.AppendValues(file.Name, color, check, status, file.Type.ToString(), file);
             }
 
-            foreach (SchemaData str in listViewDB)
+            foreach (SchemaData str in this.combinedDB)
             {
                 if (comboShow.Active == 1 && str.Status == SchemaDataStatus.None)
                 {
@@ -426,7 +436,7 @@ namespace Trilogic
                     status = "+";
                 }
 
-                list.AppendValues(str.Name, color, check, status, str.Type.ToString());
+                list.AppendValues(str.Name, color, check, status, str.Type.ToString(), str);
             }
         }
 
@@ -441,10 +451,10 @@ namespace Trilogic
         }
 
         /// <summary>
-        /// Raises the treeview row activated event.
+        /// Raises the tree view row activated event.
         /// </summary>
-        /// <param name="o">O.</param>
-        /// <param name="args">Arguments.</param>
+        /// <param name="o">The object.</param>
+        /// <param name="args">The arguments.</param>
         protected void OnTreeviewRowActivated(object o, RowActivatedArgs args)
         {
             TreeView tree = (TreeView)o;
@@ -452,7 +462,20 @@ namespace Trilogic
             tree.Model.GetIter(out iter, args.Path);
             string name = tree.Model.GetValue(iter, 0).ToString();
 
-            new CompareWindow(this, name).Show();
+            SchemaData file = null;
+            SchemaData db = null;
+            if (tree.Name == "treeviewDB")
+            {
+                db = (SchemaData)tree.Model.GetValue(iter, 5);
+                file = this.combinedFile[db.Name];
+            }
+            else
+            {
+                file = (SchemaData)tree.Model.GetValue(iter, 5);
+                db = this.combinedDB[file.Name];
+            }
+
+            new CompareWindow(this, name, file, db).Show();
         }
     }
 }

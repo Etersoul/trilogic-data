@@ -8,7 +8,7 @@
     <ProjectGuid>{B8E29029-2972-4221-9F24-E34CCE5E5253}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>Trilogic</RootNamespace>
-    <AssemblyName>OrionBackupTools</AssemblyName>
+    <AssemblyName>TrilogicBackupTools</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DebugSymbols>true</DebugSymbols>
@@ -52,6 +52,9 @@
     </Reference>
     <Reference Include="Mono.Posix, Version=2.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756" />
     <Reference Include="System.Data" />
+    <Reference Include="Mono.TextEditor">
+      <HintPath>C:\Program Files %28x86%29\Xamarin Studio\bin\Mono.TextEditor.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="gtk-gui\gui.stetic">
@@ -79,6 +82,7 @@
     <Compile Include="Data\SchemaData.cs" />
     <Compile Include="CompareWindow.cs" />
     <Compile Include="gtk-gui\Trilogic.CompareWindow.cs" />
+    <Compile Include="Data\SchemaCollection.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
