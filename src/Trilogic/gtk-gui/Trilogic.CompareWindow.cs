@@ -4,16 +4,24 @@ namespace Trilogic
 {
 	public partial class CompareWindow
 	{
+		private global::Gtk.UIManager UIManager;
 		private global::Gtk.VBox vbox2;
+		private global::Gtk.HBox hbox2;
+		private global::Gtk.CheckButton checkBoxDiff;
 		private global::Gtk.HBox hbox1;
 
 		protected virtual void Build ()
 		{
 			global::Stetic.Gui.Initialize (this);
 			// Widget Trilogic.CompareWindow
+			this.UIManager = new global::Gtk.UIManager ();
+			global::Gtk.ActionGroup w1 = new global::Gtk.ActionGroup ("Default");
+			this.UIManager.InsertActionGroup (w1, 0);
+			this.AddAccelGroup (this.UIManager.AccelGroup);
 			this.Name = "Trilogic.CompareWindow";
 			this.Title = global::Mono.Unix.Catalog.GetString ("Compare Schema");
 			this.WindowPosition = ((global::Gtk.WindowPosition)(4));
+			this.BorderWidth = ((uint)(5));
 			this.DefaultWidth = 800;
 			this.DefaultHeight = 600;
 			// Container child Trilogic.CompareWindow.Gtk.Container+ContainerChild
@@ -21,17 +29,37 @@ namespace Trilogic
 			this.vbox2.Name = "vbox2";
 			this.vbox2.Spacing = 6;
 			// Container child vbox2.Gtk.Box+BoxChild
+			this.hbox2 = new global::Gtk.HBox ();
+			this.hbox2.Name = "hbox2";
+			this.hbox2.Spacing = 6;
+			// Container child hbox2.Gtk.Box+BoxChild
+			this.checkBoxDiff = new global::Gtk.CheckButton ();
+			this.checkBoxDiff.CanFocus = true;
+			this.checkBoxDiff.Name = "checkBoxDiff";
+			this.checkBoxDiff.Label = global::Mono.Unix.Catalog.GetString ("Show Diff");
+			this.checkBoxDiff.DrawIndicator = true;
+			this.checkBoxDiff.UseUnderline = true;
+			this.hbox2.Add (this.checkBoxDiff);
+			global::Gtk.Box.BoxChild w2 = ((global::Gtk.Box.BoxChild)(this.hbox2 [this.checkBoxDiff]));
+			w2.Position = 2;
+			this.vbox2.Add (this.hbox2);
+			global::Gtk.Box.BoxChild w3 = ((global::Gtk.Box.BoxChild)(this.vbox2 [this.hbox2]));
+			w3.Position = 0;
+			w3.Expand = false;
+			w3.Fill = false;
+			// Container child vbox2.Gtk.Box+BoxChild
 			this.hbox1 = new global::Gtk.HBox ();
 			this.hbox1.Name = "hbox1";
 			this.hbox1.Spacing = 6;
 			this.vbox2.Add (this.hbox1);
-			global::Gtk.Box.BoxChild w1 = ((global::Gtk.Box.BoxChild)(this.vbox2 [this.hbox1]));
-			w1.Position = 1;
+			global::Gtk.Box.BoxChild w4 = ((global::Gtk.Box.BoxChild)(this.vbox2 [this.hbox1]));
+			w4.Position = 1;
 			this.Add (this.vbox2);
 			if ((this.Child != null)) {
 				this.Child.ShowAll ();
 			}
 			this.Show ();
+			this.checkBoxDiff.Toggled += new global::System.EventHandler (this.OnCheckBoxDiffToggled);
 		}
 	}
 }

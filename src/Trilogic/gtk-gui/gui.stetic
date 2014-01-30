@@ -5,7 +5,7 @@
   </configuration>
   <import>
     <widget-library name="glade-sharp, Version=2.12.0.0, Culture=neutral, PublicKeyToken=35e10195dab3c99f" />
-    <widget-library name="C:/Program Files (x86)/Xamarin Studio/bin/Mono.TextEditor.dll" />
+    <widget-library name="../../../lib/Mono.TextEditor.dll" />
     <widget-library name="../bin/Debug/TrilogicBackupTools.exe" internal="true" />
   </import>
   <widget class="Gtk.Window" id="Trilogic.MainWindow" design-size="840 527">
@@ -968,9 +968,11 @@ Data</property>
     </child>
   </widget>
   <widget class="Gtk.Window" id="Trilogic.CompareWindow" design-size="1083 438">
+    <action-group name="Default" />
     <property name="MemberName" />
     <property name="Title" translatable="yes">Compare Schema</property>
     <property name="WindowPosition">CenterOnParent</property>
+    <property name="BorderWidth">5</property>
     <property name="DefaultWidth">800</property>
     <property name="DefaultHeight">600</property>
     <child>
@@ -978,7 +980,37 @@ Data</property>
         <property name="MemberName" />
         <property name="Spacing">6</property>
         <child>
-          <placeholder />
+          <widget class="Gtk.HBox" id="hbox2">
+            <property name="MemberName" />
+            <property name="Spacing">6</property>
+            <child>
+              <placeholder />
+            </child>
+            <child>
+              <placeholder />
+            </child>
+            <child>
+              <widget class="Gtk.CheckButton" id="checkBoxDiff">
+                <property name="MemberName" />
+                <property name="CanFocus">True</property>
+                <property name="Label" translatable="yes">Show Diff</property>
+                <property name="DrawIndicator">True</property>
+                <property name="HasLabel">True</property>
+                <property name="UseUnderline">True</property>
+                <signal name="Toggled" handler="OnCheckBoxDiffToggled" />
+              </widget>
+              <packing>
+                <property name="Position">2</property>
+                <property name="AutoSize">True</property>
+              </packing>
+            </child>
+          </widget>
+          <packing>
+            <property name="Position">0</property>
+            <property name="AutoSize">True</property>
+            <property name="Expand">False</property>
+            <property name="Fill">False</property>
+          </packing>
         </child>
         <child>
           <widget class="Gtk.HBox" id="hbox1">

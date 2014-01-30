@@ -147,10 +147,13 @@ namespace Trilogic.Data
         public string GetTableSchema(int objectID)
         {
             List<string> list = new List<string>();
+            List<string> constraintList = new List<string>();
             string tableName = string.Empty;
             string schemaName = string.Empty;
-            string definition = "CREATE TABLE [{0}].[{1}] (\n\t{2}\n)\nGO\n";
+            string definition = "CREATE TABLE [{0}].[{1}] (\n\t{2}\n)\n\nGO\n\n{3}\nGO\n\n{4}\n";
             string columnDef = "[{0}] [{1}]{2} {3}";
+            string constraintDef = "ALTER TABLE [{0}].[{1}] WITH CHECK ADD CONSTRAINT [{2}] CHECK ({3})\nGO\n";
+            string indexDef = string.Empty;
 
             using (SqlConnection connection = this.CreateConnection())
             {
@@ -205,7 +208,7 @@ namespace Trilogic.Data
                     }
                 }
 
-                // Constraint & unique key index part
+                // Unique constraint & index part
                 command = connection.CreateCommand();
                 command.CommandText = @"
                 SELECT c.name AS column_name, h.is_primary_key, h.name, h.index_id, t.is_descending_key, h.type_desc, h.is_unique
@@ -217,7 +220,6 @@ namespace Trilogic.Data
                     ON c.object_id = h.object_id
                     AND c.column_id = t.column_id
                 WHERE h.object_id = @objectid
-                    AND h.is_unique = 1
                 ORDER BY h.index_id, t.column_id";
                 command.CommandType = CommandType.Text;
                 command.Parameters.Add(new SqlParameter("objectid", objectID));
@@ -229,18 +231,33 @@ namespace Trilogic.Data
                     string lastIsUnique = string.Empty;
                     string lastTypeDesc = string.Empty;
                     List<string> memberList = new List<string>();
+                    List<string> nonUniqueList = new List<string>();
                     while (reader.Read())
                     {
                         if (lastName != reader["name"].ToString())
                         {
                             if (lastName != string.Empty)
                             {
-                                list.Add(string.Format(
-                                    "CONSTRAINT [{0}] {1}{2}\n\t(\n\t\t{3}\n\t)",
-                                    lastName,
-                                    lastIsPrimary == "True" ? "PRIMARY KEY " : (lastIsUnique == "True" ? "UNIQUE " : string.Empty),
-                                    lastTypeDesc.ToString(),
-                                    string.Join(",\n\t\t", memberList.ToArray())));
+                                Console.WriteLine(reader["is_unique"].ToString());
+                                if (lastIsUnique == "True")
+                                {
+                                    list.Add(string.Format(
+                                        "CONSTRAINT [{0}] {1}{2}\n\t(\n\t\t{3}\n\t)",
+                                        lastName,
+                                        lastIsPrimary == "True" ? "PRIMARY KEY " : (lastIsUnique == "True" ? "UNIQUE " : string.Empty),
+                                        lastTypeDesc,
+                                        string.Join(",\n\t\t", memberList.ToArray())));
+                                }
+                                else
+                                {
+                                    nonUniqueList.Add(string.Format(
+                                        "CREATE {0} INDEX [{1}] ON [{2}].[{3}]\n(\n\t{4}\n)",
+                                        lastTypeDesc,
+                                        lastName,
+                                        schemaName,
+                                        tableName,
+                                        string.Join(",\n\t", memberList.ToArray())));
+                                }
                             }
 
                             lastName = reader["name"].ToString();
@@ -255,22 +272,86 @@ namespace Trilogic.Data
                             "[{0}] {1}",
                             reader["column_name"].ToString(),
                             reader["is_descending_key"].ToString() == "False" ? "ASC" : "DESC"));
-
                     }
 
                     if (lastName != string.Empty)
                     {
-                        list.Add(string.Format(
-                            "CONSTRAINT [{0}] {1}{2}\n\t(\n\t\t{3}\n\t)",
-                            lastName,
-                            lastIsPrimary == "True" ? "PRIMARY KEY " : (lastIsUnique == "True" ? "UNIQUE " : string.Empty),
-                            lastTypeDesc.ToString(),
-                            string.Join(",\n\t\t", memberList.ToArray())));
+                        if (lastIsUnique == "True")
+                        {
+                            list.Add(string.Format(
+                                "CONSTRAINT [{0}] {1}{2}\n\t(\n\t\t{3}\n\t)",
+                                lastName,
+                                lastIsPrimary == "True" ? "PRIMARY KEY " : (lastIsUnique == "True" ? "UNIQUE " : string.Empty),
+                                lastTypeDesc,
+                                string.Join(",\n\t\t", memberList.ToArray())));
+                        }
+                        else
+                        {
+                            nonUniqueList.Add(string.Format(
+                                "CREATE {0} INDEX [{1}] ON [{2}].[{3}]\n(\n\t{4}\n)",
+                                lastTypeDesc,
+                                lastName,
+                                schemaName,
+                                tableName,
+                                string.Join(",\n\t", memberList.ToArray())));
+                        }
+                    }
+
+                    indexDef = string.Join("\n\nGO\n\n", nonUniqueList);
+                }
+
+                // Check constraint part
+                command = connection.CreateCommand();
+                command.CommandText = @"
+                SELECT h.name, h.definition
+                FROM sys.check_constraints h
+                WHERE h.parent_object_id = @objectid";
+
+                command.CommandType = CommandType.Text;
+                command.Parameters.Add(new SqlParameter("objectid", objectID));
+
+                this.Logger.Write("Sending command");
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        constraintList.Add(string.Format(
+                            constraintDef,
+                            schemaName,
+                            tableName,
+                            reader["name"].ToString(),
+                            reader["definition"].ToString()));
                     }
                 }
+
+                // Foreign key constraint
+                /*                
+                command = connection.CreateCommand();
+                command.CommandText = @"
+                SELECT h.name AS column_name, t.name AS type_name
+                FROM sys.foreign_keys h
+                WHERE h.parent_object_id = @objectid
+                ORDER BY h.column_id";
+
+                command.CommandType = CommandType.Text;
+                command.Parameters.Add(new SqlParameter("objectid", objectID));
+
+                this.Logger.Write("Sending command");
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        list.Add(string.Format(
+                            columnDef,
+                            reader["column_name"].ToString(),
+                            reader["type_name"].ToString(),
+                            reader["max_length"].ToString() != reader["max_length_default"].ToString() ? "(" + reader["max_length"] + ")" : string.Empty,
+                            reader["is_nullable"].ToString() == "False" ? "NOT NULL" : "NULL"));
+                    }
+                }*/
             }
 
-            return string.Format(definition, schemaName, tableName, string.Join(",\n\t", list));
+            return string.Format(definition, schemaName, tableName, string.Join(",\n\t", list), indexDef, string.Join("\n", constraintList));
         }
 
         /// <summary>
