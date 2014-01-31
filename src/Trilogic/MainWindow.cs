@@ -84,11 +84,9 @@ namespace Trilogic
             TreeViewColumn columnDB = new TreeViewColumn();
             TreeViewColumn columnDBToggle = new TreeViewColumn();
             TreeViewColumn columnDBStatus = new TreeViewColumn();
-            TreeViewColumn columnDBType = new TreeViewColumn();
             TreeViewColumn columnFile = new TreeViewColumn();
             TreeViewColumn columnFileToggle = new TreeViewColumn();
             TreeViewColumn columnFileStatus = new TreeViewColumn();
-            TreeViewColumn columnFileType = new TreeViewColumn();
 
             columnDB.Title = "Database Side";
             columnFile.Title = "File Side";
@@ -96,8 +94,6 @@ namespace Trilogic
             columnFileToggle.Title = string.Empty;
             columnDBStatus.Title = "S";
             columnFileStatus.Title = "S";
-            columnDBType.Title = "Type";
-            columnFileType.Title = "Type";
 
             columnDBToggle.FixedWidth = 20;
             columnFileToggle.FixedWidth = 20;
@@ -107,11 +103,9 @@ namespace Trilogic
             this.treeviewDB.AppendColumn(columnDBToggle);
             this.treeviewDB.AppendColumn(columnDBStatus);
             this.treeviewDB.AppendColumn(columnDB);
-            this.treeviewDB.AppendColumn(columnDBType);
             this.treeviewFile.AppendColumn(columnFileToggle);
             this.treeviewFile.AppendColumn(columnFileStatus);
             this.treeviewFile.AppendColumn(columnFile);
-            this.treeviewFile.AppendColumn(columnFileType);
 
             CellRendererText renderer = new CellRendererText();
             CellRendererText renderer2 = new CellRendererText();
@@ -125,11 +119,9 @@ namespace Trilogic
             columnDB.PackStart(renderer, false);
             columnDBStatus.PackStart(statusDB, false);
             columnDBToggle.PackStart(toggleDB, true);
-            columnDBType.PackEnd(typeDB, false);
             columnFile.PackStart(renderer2, false);
             columnFileStatus.PackStart(statusFile, false);
             columnFileToggle.PackStart(toggleFile, true);
-            columnFileType.PackEnd(typeFile, false);
 
             columnDB.AddAttribute(renderer, "text", 0);
             columnFile.AddAttribute(renderer2, "text", 0);
@@ -142,9 +134,6 @@ namespace Trilogic
 
             columnDBStatus.AddAttribute(statusDB, "text", 3);
             columnFileStatus.AddAttribute(statusFile, "text", 3);
-
-            columnDBType.AddAttribute(typeDB, "text", 4);
-            columnFileType.AddAttribute(typeFile, "text", 4);
 
             // Set toggle signal
             toggleDB.Toggled += (object o, ToggledArgs args) =>
@@ -270,8 +259,8 @@ namespace Trilogic
         protected void OnButtonStartDiffClicked(object sender, EventArgs e)
         {
             string dir = this.entryFolder.Text;
-            string tableDir = dir + "/table";
-            string procedureDir = dir + "/proc";
+            string tableDir = dir + "/" + AppSettings.TableDir;
+            string procedureDir = dir + "/" + AppSettings.ProcedureDir;
 
             this.SaveConfiguration();
 
@@ -370,6 +359,10 @@ namespace Trilogic
                 }
             }
 
+            // Reset the combined file and database variables
+            this.combinedFile = new SchemaCollection();
+            this.combinedDB = new SchemaCollection();
+
             this.combinedFile.AppendCollection(this.listFileTables);
             this.combinedFile.AppendCollection(this.listFileProcedures);
             this.combinedDB.AppendCollection(this.listDBTables);
@@ -394,10 +387,14 @@ namespace Trilogic
         protected void ShowProcessedList()
         {
             // Prepare the list store
-            ListStore list = new ListStore(typeof(string), typeof(string), typeof(bool), typeof(string), typeof(string), typeof(SchemaData));
+            TreeStore list = new TreeStore(typeof(string), typeof(string), typeof(bool), typeof(string), typeof(SchemaData));
+            TreeIter iterTable1 = list.AppendValues("Tables");
+            TreeIter iterProcedure1 = list.AppendValues("Stored Procedures");
             this.treeviewDB.Model = list;
 
-            ListStore list2 = new ListStore(typeof(string), typeof(string), typeof(bool), typeof(string), typeof(string), typeof(SchemaData));
+            TreeStore list2 = new TreeStore(typeof(string), typeof(string), typeof(bool), typeof(string), typeof(SchemaData));
+            TreeIter iterTable2 = list2.AppendValues("Tables");
+            TreeIter iterProcedure2 = list2.AppendValues("Stored Procedures");
             this.treeviewFile.Model = list2;
 
             // Render to the tree view
@@ -428,8 +425,20 @@ namespace Trilogic
                     check = true;
                     status = "+";
                 }
+                else if (file.Status == SchemaDataStatus.Modified)
+                {
+                    color = "#ffff99";
+                    check = true;
+                    status = "#";
+                }
 
-                list2.AppendValues(file.Name, color, check, status, file.Type.ToString(), file);
+                TreeIter localIter = iterTable2;
+                if (file.Type == SchemaDataType.StoredProcedure)
+                {
+                    localIter = iterProcedure2;
+                }
+
+                list2.AppendValues(localIter, file.Name, color, check, status, file);
             }
 
             foreach (SchemaData str in this.combinedDB)
@@ -466,7 +475,13 @@ namespace Trilogic
                     status = "#";
                 }
 
-                list.AppendValues(str.Name, color, check, status, str.Type.ToString(), str);
+                TreeIter localIter = iterTable1;
+                if (str.Type == SchemaDataType.StoredProcedure)
+                {
+                    localIter = iterProcedure1;
+                }
+
+                list.AppendValues(localIter, str.Name, color, check, status, str);
             }
         }
 
@@ -496,12 +511,12 @@ namespace Trilogic
             SchemaData db = null;
             if (tree.Name == "treeviewDB")
             {
-                db = (SchemaData)tree.Model.GetValue(iter, 5);
+                db = (SchemaData)tree.Model.GetValue(iter, 4);
                 file = this.combinedFile[db.Name];
             }
             else
             {
-                file = (SchemaData)tree.Model.GetValue(iter, 5);
+                file = (SchemaData)tree.Model.GetValue(iter, 4);
                 db = this.combinedDB[file.Name];
             }
 
@@ -515,6 +530,43 @@ namespace Trilogic
         /// <param name="e">Event arguments.</param>
         protected void OnButtonRightActivated(object sender, EventArgs e)
         {
+            TreeIter iter;
+            TreeModel model = this.treeviewDB.Model;
+            model.GetIterFirst(out iter);
+            GtkLogService.Instance.Write("Start schema dumping process.");
+
+            do
+            {
+                TreeIter iterChild;
+                bool isChild = model.IterChildren(out iterChild, iter);
+
+                if(!isChild)
+                {
+                    continue;
+                }
+
+                do
+                {
+                    bool active = (bool)model.GetValue(iterChild, 2);
+                    if (active == true)
+                    {
+                        SchemaData schema = (SchemaData)model.GetValue(iterChild, 4);
+                        if(schema.Type == SchemaDataType.Table)
+                        {
+                            File.WriteAllText(this.entryFolder.Text + "/" + AppSettings.TableDir + "/" + schema.Name + "." + schema.Type.ToString() + ".sql", this.Sql.GetTableSchema(schema.ObjectID));
+                        }
+                        else if(schema.Type == SchemaDataType.StoredProcedure)
+                        {
+                            File.WriteAllText(this.entryFolder.Text + "/" + AppSettings.ProcedureDir + "/" + schema.Name + "." + schema.Type.ToString() + ".sql", this.Sql.GetStoredProcedureDefinition(schema.ObjectID));
+                        }
+
+                     }
+                }
+                while (model.IterNext(ref iterChild));
+            }
+            while (model.IterNext(ref iter));
+
+            GtkLogService.Instance.Write("Schema dumping complete.");
         }
     }
 }

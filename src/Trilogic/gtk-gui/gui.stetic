@@ -461,7 +461,7 @@ Data</property>
                                 <property name="Icon">file:.\Assets\arrow.png</property>
                                 <property name="Label" translatable="yes" />
                                 <property name="UseUnderline">True</property>
-                                <signal name="Activated" handler="OnButtonRightActivated" />
+                                <signal name="Clicked" handler="OnButtonRightActivated" />
                               </widget>
                               <packing>
                                 <property name="Position">0</property>

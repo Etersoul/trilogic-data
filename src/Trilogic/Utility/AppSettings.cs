@@ -13,6 +13,16 @@ namespace Trilogic.Utility
     public class AppSettings
     {
         /// <summary>
+        /// The table directory.
+        /// </summary>
+        public const string TableDir = "table";
+
+        /// <summary>
+        /// The procedure directory.
+        /// </summary>
+        public const string ProcedureDir = "proc";
+
+        /// <summary>
         /// The default setting path.
         /// </summary>
         private static string defaultSettingPath = "AppSetting.ini";
