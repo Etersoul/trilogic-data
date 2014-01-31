@@ -524,11 +524,11 @@ namespace Trilogic
         }
 
         /// <summary>
-        /// Raises the button right activated event.
+        /// Raises the button right clicked event.
         /// </summary>
         /// <param name="sender">The sender.</param>
         /// <param name="e">Event arguments.</param>
-        protected void OnButtonRightActivated(object sender, EventArgs e)
+        protected void OnButtonRightClicked(object sender, EventArgs e)
         {
             TreeIter iter;
             TreeModel model = this.treeviewDB.Model;
@@ -540,6 +540,7 @@ namespace Trilogic
                 TreeIter iterChild;
                 bool isChild = model.IterChildren(out iterChild, iter);
 
+                // Ignore the tree that doesn't have child
                 if(!isChild)
                 {
                     continue;
@@ -567,6 +568,60 @@ namespace Trilogic
             while (model.IterNext(ref iter));
 
             GtkLogService.Instance.Write("Schema dumping complete.");
+        }
+
+        /// <summary>
+        /// Raises the button left clicked event.
+        /// </summary>
+        /// <param name="sender">Sender.</param>
+        /// <param name="e">E.</param>
+        protected void OnButtonLeftClicked(object sender, EventArgs e)
+        {
+            TreeIter iter;
+            TreeModel model = this.treeviewFile.Model;
+            model.GetIterFirst(out iter);
+            GtkLogService.Instance.Write("Start schema restoration process.");
+
+            do
+            {
+                TreeIter iterChild;
+                bool isChild = model.IterChildren(out iterChild, iter);
+
+                // Ignore the tree that doesn't have child
+                if(!isChild)
+                {
+                    continue;
+                }
+
+                do
+                {
+                    bool active = (bool)model.GetValue(iterChild, 2);
+                    if (active == true)
+                    {
+                        SchemaData schema = (SchemaData)model.GetValue(iterChild, 4);
+                        if(schema.Type == SchemaDataType.Table)
+                        {
+                            if(this.Sql.IsTableExist(schema.Name))
+                            {
+                                this.Sql.RunCommand("DROP TABLE " + schema.Name);
+                            }
+                        }
+                        else if(schema.Type == SchemaDataType.StoredProcedure)
+                        {
+                            if(this.Sql.IsProcedureExist(schema.Name))
+                            {
+                                this.Sql.RunCommand("DROP PROCEDURE " + schema.Name);
+                            }
+                        }
+
+                        this.Sql.RunCommand(schema.Data);
+                    }
+                }
+                while (model.IterNext(ref iterChild));
+            }
+            while (model.IterNext(ref iter));
+
+            GtkLogService.Instance.Write("Schema restoration complete.");
         }
     }
 }

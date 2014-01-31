@@ -418,7 +418,8 @@ namespace Trilogic
 			this.buttonOpenFolder.Clicked += new global::System.EventHandler (this.OnButtonOpenFolderClicked);
 			this.buttonStartDiff.Clicked += new global::System.EventHandler (this.OnButtonStartDiffClicked);
 			this.treeviewDB.RowActivated += new global::Gtk.RowActivatedHandler (this.OnTreeviewRowActivated);
-			this.buttonRight.Clicked += new global::System.EventHandler (this.OnButtonRightActivated);
+			this.buttonRight.Clicked += new global::System.EventHandler (this.OnButtonRightClicked);
+			this.buttonLeft.Clicked += new global::System.EventHandler (this.OnButtonLeftClicked);
 			this.treeviewFile.RowActivated += new global::Gtk.RowActivatedHandler (this.OnTreeviewRowActivated);
 		}
 	}

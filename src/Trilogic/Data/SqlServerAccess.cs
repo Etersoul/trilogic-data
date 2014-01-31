@@ -156,9 +156,9 @@ namespace Trilogic.Data
             List<string> constraintList = new List<string>();
             string tableName = string.Empty;
             string schemaName = string.Empty;
-            string definition = "CREATE TABLE [{0}].[{1}] (\n\t{2}\n)\n\nGO\n\n{3}\nGO\n\n{4}\n";
+            string definition = "CREATE TABLE [{0}].[{1}] (\n\t{2}\n);\n\n{3}\n\n{4}";
             string columnDef = "[{0}] [{1}]{2} {3}";
-            string constraintDef = "ALTER TABLE [{0}].[{1}] WITH CHECK ADD CONSTRAINT [{2}] CHECK ({3})\nGO\n";
+            string constraintDef = "ALTER TABLE [{0}].[{1}] WITH CHECK ADD CONSTRAINT [{2}] CHECK ({3});";
             string indexDef = string.Empty;
 
             using (SqlConnection connection = this.CreateConnection())
@@ -190,11 +190,11 @@ namespace Trilogic.Data
                 using (SqlCommand command = connection.CreateCommand())
                 {
                     command.CommandText = @"
-                    SELECT h.name AS column_name, t.name AS type_name, h.is_nullable, h.max_length, t.max_length AS max_length_default,
-                        h.is_identity
+                    SELECT h.name AS column_name, t.name AS type_name, h.is_nullable, h.max_length, h.precision, h.scale,
+                        t.max_length AS max_length_default, h.is_identity, t.name AS type_name
                     FROM sys.columns h
                     INNER JOIN sys.types t
-                    ON t.system_type_id = h.system_type_id
+                    ON t.user_type_id = h.user_type_id
                     WHERE h.object_id = @objectid
                     ORDER BY h.column_id";
 
@@ -205,11 +205,40 @@ namespace Trilogic.Data
                     {
                         while (reader.Read())
                         {
+                            string maxLength = reader["max_length"].ToString();
+                            if (maxLength != reader["max_length_default"].ToString())
+                            {
+                                if (maxLength == "-1")
+                                {
+                                    maxLength = "(max)";
+                                }
+                                else if (reader["precision"].ToString() != "0" || reader["scale"].ToString() != "0")
+                                {
+                                    maxLength = "(" + reader["precision"].ToString() + "," + reader["scale"].ToString() + ")";
+                                }
+                                else
+                                {
+                                    // Don't know why, but nchar and nvarchar have length 2 times more than it should from sys.columns
+                                    if (reader["type_name"].ToString() == "nchar" || reader["type_name"].ToString() == "nvarchar")
+                                    {
+                                        maxLength = "(" + (Convert.ToInt32(reader["max_length"]) / 2) + ")";
+                                    }
+                                    else
+                                    {
+                                        maxLength = "(" + maxLength + ")";
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                maxLength = string.Empty;
+                            }
+
                             list.Add(string.Format(
                                 columnDef,
                                 reader["column_name"].ToString(),
                                 reader["type_name"].ToString(),
-                                reader["max_length"].ToString() != reader["max_length_default"].ToString() ? "(" + reader["max_length"] + ")" : string.Empty,
+                                maxLength,
                                 reader["is_nullable"].ToString() == "False" ? "NOT NULL" : "NULL"));
                         }
                     }
@@ -259,7 +288,7 @@ namespace Trilogic.Data
                                     else
                                     {
                                         nonUniqueList.Add(string.Format(
-                                            "CREATE {0} INDEX [{1}] ON [{2}].[{3}]\n(\n\t{4}\n)",
+                                            "CREATE {0} INDEX [{1}] ON [{2}].[{3}]\n(\n\t{4}\n);",
                                             lastTypeDesc,
                                             lastName,
                                             schemaName,
@@ -296,7 +325,7 @@ namespace Trilogic.Data
                             else
                             {
                                 nonUniqueList.Add(string.Format(
-                                    "CREATE {0} INDEX [{1}] ON [{2}].[{3}]\n(\n\t{4}\n)",
+                                    "CREATE {0} INDEX [{1}] ON [{2}].[{3}]\n(\n\t{4}\n);",
                                     lastTypeDesc,
                                     lastName,
                                     schemaName,
@@ -305,7 +334,7 @@ namespace Trilogic.Data
                             }
                         }
 
-                        indexDef = string.Join("\n\nGO\n\n", nonUniqueList);
+                        indexDef = string.Join("\n\n", nonUniqueList);
                     }
                 }
 
@@ -360,7 +389,7 @@ namespace Trilogic.Data
                 }*/
             }
 
-            return string.Format(definition, schemaName, tableName, string.Join(",\n\t", list), indexDef, string.Join("\n", constraintList));
+            return string.Format(definition, schemaName, tableName, string.Join(",\n\t", list), indexDef, string.Join("\n\n", constraintList));
         }
 
         /// <summary>
@@ -385,11 +414,95 @@ namespace Trilogic.Data
                 {
                     if (reader.Read())
                     {
-                        return reader["definition"].ToString().Replace("\r\n", "\n") + "GO\n";
+                        return reader["definition"].ToString().Replace("\r\n", "\n") + "\n";
                     }
                 }
 
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Runs the command.
+        /// </summary>
+        /// <param name="commandString">Command string.</param>
+        public void RunCommand(string commandString)
+        {
+            using (SqlConnection connection = this.CreateConnection())
+            {
+                SqlCommand command = connection.CreateCommand();
+                command.CommandText = commandString;
+                command.ExecuteNonQuery();
+            }
+        }
+
+        /// <summary>
+        /// Determines whether this instance table is exist with the specified table Name.
+        /// </summary>
+        /// <returns><c>true</c> if table is exist with the specified table name; otherwise, <c>false</c>.</returns>
+        /// <param name="tableName">Table name.</param>
+        public bool IsTableExist(string tableName)
+        {
+            string[] str = tableName.Split('.');
+            string table = str[str.Length - 1];
+            using (SqlConnection connection = this.CreateConnection())
+            {
+                SqlCommand command = connection.CreateCommand();
+                command.CommandText = @"
+                    SELECT count(*) AS count
+                    FROM sys.tables t
+                    INNER JOIN sys.schemas s
+                        ON s.schema_id = t.schema_id
+                        AND s.name = @schema
+                    WHERE t.name = @table
+                ";
+                command.Parameters.Add(new SqlParameter("table", table));
+                command.Parameters.Add(new SqlParameter("schema", str[0]));
+
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    if (!reader.Read() || reader["count"].ToString() == "0")
+                    {
+                        return false;
+                    }
+
+                    return true;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Determines whether this procedure is exist with the specified procedure name.
+        /// </summary>
+        /// <returns><c>true</c> if this instance procedure is exist with the specified procedure name; otherwise, <c>false</c>.</returns>
+        /// <param name="procedureName">Procedure name.</param>
+        public bool IsProcedureExist(string procedureName)
+        {
+            string[] str = procedureName.Split('.');
+            string proc = str[str.Length - 1];
+            using (SqlConnection connection = this.CreateConnection())
+            {
+                SqlCommand command = connection.CreateCommand();
+                command.CommandText = @"
+                    SELECT count(*) AS count
+                    FROM sys.procedures t
+                    INNER JOIN sys.schemas s
+                        ON s.schema_id = t.schema_id
+                        AND s.name = @schema
+                    WHERE t.name = @proc
+                ";
+                command.Parameters.Add(new SqlParameter("proc", proc));
+                command.Parameters.Add(new SqlParameter("schema", str[0]));
+
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    if (!reader.Read() || reader["count"].ToString() == "0")
+                    {
+                        return false;
+                    }
+
+                    return true;
+                }
             }
         }
 
@@ -403,6 +516,7 @@ namespace Trilogic.Data
             builder.DataSource = this.Host;
             builder.UserID = this.Username;
             builder.Password = this.Password;
+            builder.InitialCatalog = this.Database;
             builder.ConnectTimeout = 5;
 
             SqlConnection connection = new SqlConnection(builder.ToString());
