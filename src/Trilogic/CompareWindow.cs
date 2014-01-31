@@ -171,12 +171,12 @@ namespace Trilogic
 
                 foreach (KeyValuePair<int, TextLineMarker> single in databaseMarker)
                 {
-                    docDB.AddMarker(single.Key, single.Value); 
+                    docDB.AddMarker(single.Key, single.Value);
                 }
 
                 foreach (KeyValuePair<int, TextLineMarker> single in fileMarker)
                 {
-                    docLocal.AddMarker(single.Key, single.Value); 
+                    docLocal.AddMarker(single.Key, single.Value);
                 }
 
                 docDB.CommitUpdateAll();

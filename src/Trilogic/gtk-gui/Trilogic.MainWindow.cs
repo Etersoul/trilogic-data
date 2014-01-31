@@ -37,6 +37,9 @@ namespace Trilogic
 		private global::Gtk.HBox hbox5;
 		private global::Gtk.ScrolledWindow GtkScrolledWindow;
 		private global::Gtk.TreeView treeviewDB;
+		private global::Gtk.VBox vbox3;
+		private global::Gtk.Button buttonRight;
+		private global::Gtk.Button buttonLeft;
 		private global::Gtk.ScrolledWindow GtkScrolledWindow1;
 		private global::Gtk.TreeView treeviewFile;
 		private global::Gtk.ScrolledWindow GtkScrolledWindow2;
@@ -332,6 +335,41 @@ namespace Trilogic
 			global::Gtk.Box.BoxChild w25 = ((global::Gtk.Box.BoxChild)(this.hbox5 [this.GtkScrolledWindow]));
 			w25.Position = 0;
 			// Container child hbox5.Gtk.Box+BoxChild
+			this.vbox3 = new global::Gtk.VBox ();
+			this.vbox3.Name = "vbox3";
+			this.vbox3.Spacing = 6;
+			// Container child vbox3.Gtk.Box+BoxChild
+			this.buttonRight = new global::Gtk.Button ();
+			this.buttonRight.CanFocus = true;
+			this.buttonRight.Name = "buttonRight";
+			this.buttonRight.UseUnderline = true;
+			global::Gtk.Image w26 = new global::Gtk.Image ();
+			w26.Pixbuf = new global::Gdk.Pixbuf (global::System.IO.Path.Combine (global::System.AppDomain.CurrentDomain.BaseDirectory, ".\\Assets\\arrow.png"));
+			this.buttonRight.Image = w26;
+			this.vbox3.Add (this.buttonRight);
+			global::Gtk.Box.BoxChild w27 = ((global::Gtk.Box.BoxChild)(this.vbox3 [this.buttonRight]));
+			w27.Position = 0;
+			w27.Expand = false;
+			w27.Fill = false;
+			// Container child vbox3.Gtk.Box+BoxChild
+			this.buttonLeft = new global::Gtk.Button ();
+			this.buttonLeft.CanFocus = true;
+			this.buttonLeft.Name = "buttonLeft";
+			this.buttonLeft.UseUnderline = true;
+			global::Gtk.Image w28 = new global::Gtk.Image ();
+			w28.Pixbuf = new global::Gdk.Pixbuf (global::System.IO.Path.Combine (global::System.AppDomain.CurrentDomain.BaseDirectory, ".\\Assets\\arrow-180.png"));
+			this.buttonLeft.Image = w28;
+			this.vbox3.Add (this.buttonLeft);
+			global::Gtk.Box.BoxChild w29 = ((global::Gtk.Box.BoxChild)(this.vbox3 [this.buttonLeft]));
+			w29.Position = 1;
+			w29.Expand = false;
+			w29.Fill = false;
+			this.hbox5.Add (this.vbox3);
+			global::Gtk.Box.BoxChild w30 = ((global::Gtk.Box.BoxChild)(this.hbox5 [this.vbox3]));
+			w30.Position = 1;
+			w30.Expand = false;
+			w30.Fill = false;
+			// Container child hbox5.Gtk.Box+BoxChild
 			this.GtkScrolledWindow1 = new global::Gtk.ScrolledWindow ();
 			this.GtkScrolledWindow1.Name = "GtkScrolledWindow1";
 			this.GtkScrolledWindow1.ShadowType = ((global::Gtk.ShadowType)(1));
@@ -341,15 +379,16 @@ namespace Trilogic
 			this.treeviewFile.Name = "treeviewFile";
 			this.GtkScrolledWindow1.Add (this.treeviewFile);
 			this.hbox5.Add (this.GtkScrolledWindow1);
-			global::Gtk.Box.BoxChild w27 = ((global::Gtk.Box.BoxChild)(this.hbox5 [this.GtkScrolledWindow1]));
-			w27.Position = 1;
+			global::Gtk.Box.BoxChild w32 = ((global::Gtk.Box.BoxChild)(this.hbox5 [this.GtkScrolledWindow1]));
+			w32.PackType = ((global::Gtk.PackType)(1));
+			w32.Position = 2;
 			this.hpaned1.Add (this.hbox5);
 			this.vbox2.Add (this.hpaned1);
-			global::Gtk.Box.BoxChild w29 = ((global::Gtk.Box.BoxChild)(this.vbox2 [this.hpaned1]));
-			w29.Position = 1;
+			global::Gtk.Box.BoxChild w34 = ((global::Gtk.Box.BoxChild)(this.vbox2 [this.hpaned1]));
+			w34.Position = 1;
 			this.vpaned1.Add (this.vbox2);
-			global::Gtk.Paned.PanedChild w30 = ((global::Gtk.Paned.PanedChild)(this.vpaned1 [this.vbox2]));
-			w30.Resize = false;
+			global::Gtk.Paned.PanedChild w35 = ((global::Gtk.Paned.PanedChild)(this.vpaned1 [this.vbox2]));
+			w35.Resize = false;
 			// Container child vpaned1.Gtk.Paned+PanedChild
 			this.GtkScrolledWindow2 = new global::Gtk.ScrolledWindow ();
 			this.GtkScrolledWindow2.Name = "GtkScrolledWindow2";
@@ -361,14 +400,14 @@ namespace Trilogic
 			this.GtkScrolledWindow2.Add (this.textviewLog);
 			this.vpaned1.Add (this.GtkScrolledWindow2);
 			this.vbox4.Add (this.vpaned1);
-			global::Gtk.Box.BoxChild w33 = ((global::Gtk.Box.BoxChild)(this.vbox4 [this.vpaned1]));
-			w33.Position = 1;
+			global::Gtk.Box.BoxChild w38 = ((global::Gtk.Box.BoxChild)(this.vbox4 [this.vpaned1]));
+			w38.Position = 1;
 			this.Add (this.vbox4);
 			if ((this.Child != null)) {
 				this.Child.ShowAll ();
 			}
-			this.DefaultWidth = 840;
-			this.DefaultHeight = 527;
+			this.DefaultWidth = 1147;
+			this.DefaultHeight = 595;
 			this.Show ();
 			this.DeleteEvent += new global::Gtk.DeleteEventHandler (this.OnDeleteEvent);
 			this.ResizeChecked += new global::System.EventHandler (this.OnResizeChecked);
@@ -379,6 +418,7 @@ namespace Trilogic
 			this.buttonOpenFolder.Clicked += new global::System.EventHandler (this.OnButtonOpenFolderClicked);
 			this.buttonStartDiff.Clicked += new global::System.EventHandler (this.OnButtonStartDiffClicked);
 			this.treeviewDB.RowActivated += new global::Gtk.RowActivatedHandler (this.OnTreeviewRowActivated);
+			this.buttonRight.Activated += new global::System.EventHandler (this.OnButtonRightActivated);
 			this.treeviewFile.RowActivated += new global::Gtk.RowActivatedHandler (this.OnTreeviewRowActivated);
 		}
 	}

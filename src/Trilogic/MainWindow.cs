@@ -50,12 +50,6 @@ namespace Trilogic
         private SchemaCollection listDBProcedures = new SchemaCollection();
 
         /// <summary>
-        /// Gets or sets the database connection.
-        /// </summary>
-        /// <value>The sql.</value>
-        public SqlServerAccess Sql { get; set; }
-
-        /// <summary>
         /// The combined file.
         /// </summary>
         private SchemaCollection combinedFile = new SchemaCollection();
@@ -173,6 +167,12 @@ namespace Trilogic
         }
 
         /// <summary>
+        /// Gets or sets the database connection.
+        /// </summary>
+        /// <value>The database data access handler.</value>
+        public SqlServerAccess Sql { get; set; }
+
+        /// <summary>
         /// Fills the folder.
         /// </summary>
         /// <param name="folder">The folder.</param>
@@ -288,7 +288,7 @@ namespace Trilogic
                 id++;
                 string tableName = file.Replace("\\", "/").Substring(tableDir.Length + 1);
                 tableName = tableName.Replace(".Table.sql", string.Empty);
-                this.listFileTables.Add(new SchemaData { Name = tableName, ObjectID = id, Type = SchemaDataType.Table, FilePath = file });
+                this.listFileTables.Add(new SchemaData { Name = tableName, ObjectID = id, Type = SchemaDataType.Table, FilePath = file, Data = File.ReadAllText(file).Replace("\r\n", "\n") });
             }
 
             this.listFileProcedures = new SchemaCollection();
@@ -297,7 +297,7 @@ namespace Trilogic
                 id++;
                 string procedureName = file.Replace("\\", "/").Substring(procedureDir.Length + 1);
                 procedureName = procedureName.Replace(".StoredProcedure.sql", string.Empty);
-                this.listFileProcedures.Add(new SchemaData { Name = procedureName, ObjectID = id, Type = SchemaDataType.StoredProcedure, FilePath = file });
+                this.listFileProcedures.Add(new SchemaData { Name = procedureName, ObjectID = id, Type = SchemaDataType.StoredProcedure, FilePath = file, Data = File.ReadAllText(file) });
             }
 
             if (!Directory.Exists(dir))
@@ -318,6 +318,12 @@ namespace Trilogic
                 if (!this.listDBTables.ContainsName(table))
                 {
                     table.Status = SchemaDataStatus.Added;
+                    continue;
+                }
+
+                if (this.listDBTables.IsModified(table))
+                {
+                    table.Status = SchemaDataStatus.Modified;
                 }
             }
 
@@ -326,6 +332,12 @@ namespace Trilogic
                 if (!this.listFileTables.ContainsName(table))
                 {
                     table.Status = SchemaDataStatus.Added;
+                    continue;
+                }
+
+                if (this.listFileTables.IsModified(table))
+                {
+                    table.Status = SchemaDataStatus.Modified;
                 }
             }
 
@@ -335,6 +347,12 @@ namespace Trilogic
                 if (!this.listDBProcedures.ContainsName(sp))
                 {
                     sp.Status = SchemaDataStatus.Added;
+                    continue;
+                }
+
+                if (this.listDBProcedures.IsModified(sp))
+                {
+                    sp.Status = SchemaDataStatus.Modified;
                 }
             }
 
@@ -343,6 +361,12 @@ namespace Trilogic
                 if (!this.listFileProcedures.ContainsName(sp))
                 {
                     sp.Status = SchemaDataStatus.Added;
+                    continue;
+                }
+
+                if (this.listFileProcedures.IsModified(sp))
+                {
+                    sp.Status = SchemaDataStatus.Modified;
                 }
             }
 
@@ -435,6 +459,12 @@ namespace Trilogic
                     check = true;
                     status = "+";
                 }
+                else if (str.Status == SchemaDataStatus.Modified)
+                {
+                    color = "#ffff99";
+                    check = true;
+                    status = "#";
+                }
 
                 list.AppendValues(str.Name, color, check, status, str.Type.ToString(), str);
             }
@@ -476,6 +506,15 @@ namespace Trilogic
             }
 
             new CompareWindow(this, name, file, db).Show();
+        }
+
+        /// <summary>
+        /// Raises the button right activated event.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">Event arguments.</param>
+        protected void OnButtonRightActivated(object sender, EventArgs e)
+        {
         }
     }
 }

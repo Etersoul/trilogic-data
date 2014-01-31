@@ -5,6 +5,7 @@
 namespace Trilogic
 {
     using System;
+    using System.Security.Cryptography;
 
     /// <summary>
     /// Schema data type enumeration.
@@ -59,6 +60,7 @@ namespace Trilogic
         public SchemaData()
         {
             this.Status = SchemaDataStatus.None;
+            this.Data = string.Empty;
         }
 
         /// <summary>
@@ -90,6 +92,27 @@ namespace Trilogic
         /// </summary>
         /// <value>The definition.</value>
         public string Definition { get; set; }
+
+        /// <summary>
+        /// Gets or sets the data.
+        /// </summary>
+        /// <value>The data.</value>
+        public string Data { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether this instance hash.
+        /// </summary>
+        /// <value>Hash value using MD5 and Base64 format.</value>
+        public string Hash
+        {
+            get
+            {
+                byte[] buffer = MD5.Create().ComputeHash(System.Text.Encoding.Default.GetBytes(this.Data));
+
+                // Use Base64 format string instead of hexadecimal string to make it more compact
+                return Convert.ToBase64String(buffer);
+            }
+        }
 
         /// <summary>
         /// Gets or sets the status.

@@ -86,16 +86,19 @@ namespace Trilogic.Data
 
                 command.CommandType = CommandType.Text;
 
-                this.Logger.Write("Sending command");
                 using (SqlDataReader reader = command.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        list.Add(new SchemaData { Name = (string)reader["name"], ObjectID = (int)reader["object_id"], Type = SchemaDataType.Table });
+                        list.Add(new SchemaData()
+                            {
+                                Name = (string)reader["name"],
+                                ObjectID = (int)reader["object_id"],
+                                Type = SchemaDataType.Table,
+                                Data = this.GetTableSchema((int)reader["object_id"])
+                            });
                     }
                 }
-
-                this.Logger.Write("Process finished");
             }
 
             return list;
@@ -124,16 +127,19 @@ namespace Trilogic.Data
 
                 command.CommandType = CommandType.Text;
 
-                this.Logger.Write("Sending command");
                 using (SqlDataReader reader = command.ExecuteReader())
                 {
                     while (reader.Read())
                     {
-                        list.Add(new SchemaData { Name = (string)reader["name"], ObjectID = (int)reader["object_id"], Type = SchemaDataType.StoredProcedure });
+                        list.Add(new SchemaData()
+                            {
+                                Name = (string)reader["name"],
+                                ObjectID = (int)reader["object_id"],
+                                Type = SchemaDataType.StoredProcedure,
+                                Data = this.GetStoredProcedureDefinition((int)reader["object_id"])
+                            });
                     }
                 }
-
-                this.Logger.Write("Process finished");
             }
 
             return list;
@@ -157,170 +163,174 @@ namespace Trilogic.Data
 
             using (SqlConnection connection = this.CreateConnection())
             {
-                this.Logger.Write("Opening connection for table: " + objectID);
-
                 // Table
-                SqlCommand command = connection.CreateCommand();
-                command.CommandText = @"
-                SELECT s.name AS table_name, h.name AS schema_name, s.object_id
-                FROM sys.tables s
-                INNER JOIN sys.schemas h
-                    ON h.schema_id = s.schema_id
-                WHERE s.type = 'U'
-                    AND s.object_id = @objectid
-                ORDER BY s.name";
-                command.Parameters.Add(new SqlParameter("objectid", objectID));
-
-                using (SqlDataReader reader = command.ExecuteReader())
+                using (SqlCommand command = connection.CreateCommand())
                 {
-                    if (reader.Read())
+                    command.CommandText = @"
+                    SELECT s.name AS table_name, h.name AS schema_name, s.object_id
+                    FROM sys.tables s
+                    INNER JOIN sys.schemas h
+                        ON h.schema_id = s.schema_id
+                    WHERE s.type = 'U'
+                        AND s.object_id = @objectid
+                    ORDER BY s.name";
+                    command.Parameters.Add(new SqlParameter("objectid", objectID));
+
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
-                        tableName = reader["table_name"].ToString();
-                        schemaName = reader["schema_name"].ToString();
+                        if (reader.Read())
+                        {
+                            tableName = reader["table_name"].ToString();
+                            schemaName = reader["schema_name"].ToString();
+                        }
                     }
                 }
 
                 // Columns
-                command = connection.CreateCommand();
-                command.CommandText = @"
-                SELECT h.name AS column_name, t.name AS type_name, h.is_nullable, h.max_length, t.max_length AS max_length_default,
-                    h.is_identity
-                FROM sys.columns h
-                INNER JOIN sys.types t
-                ON t.system_type_id = h.system_type_id
-                WHERE h.object_id = @objectid
-                ORDER BY h.column_id";
-
-                command.CommandType = CommandType.Text;
-                command.Parameters.Add(new SqlParameter("objectid", objectID));
-
-                this.Logger.Write("Sending command");
-                using (SqlDataReader reader = command.ExecuteReader())
+                using (SqlCommand command = connection.CreateCommand())
                 {
-                    while (reader.Read())
+                    command.CommandText = @"
+                    SELECT h.name AS column_name, t.name AS type_name, h.is_nullable, h.max_length, t.max_length AS max_length_default,
+                        h.is_identity
+                    FROM sys.columns h
+                    INNER JOIN sys.types t
+                    ON t.system_type_id = h.system_type_id
+                    WHERE h.object_id = @objectid
+                    ORDER BY h.column_id";
+
+                    command.CommandType = CommandType.Text;
+                    command.Parameters.Add(new SqlParameter("objectid", objectID));
+
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
-                        list.Add(string.Format(
-                            columnDef,
-                            reader["column_name"].ToString(),
-                            reader["type_name"].ToString(),
-                            reader["max_length"].ToString() != reader["max_length_default"].ToString() ? "(" + reader["max_length"] + ")" : string.Empty,
-                            reader["is_nullable"].ToString() == "False" ? "NOT NULL" : "NULL"));
+                        while (reader.Read())
+                        {
+                            list.Add(string.Format(
+                                columnDef,
+                                reader["column_name"].ToString(),
+                                reader["type_name"].ToString(),
+                                reader["max_length"].ToString() != reader["max_length_default"].ToString() ? "(" + reader["max_length"] + ")" : string.Empty,
+                                reader["is_nullable"].ToString() == "False" ? "NOT NULL" : "NULL"));
+                        }
                     }
                 }
 
                 // Unique constraint & index part
-                command = connection.CreateCommand();
-                command.CommandText = @"
-                SELECT c.name AS column_name, h.is_primary_key, h.name, h.index_id, t.is_descending_key, h.type_desc, h.is_unique
-                FROM sys.indexes h
-                INNER JOIN sys.index_columns t
-                    ON t.object_id = h.object_id
-                    AND t.index_id = h.index_id
-                INNER JOIN sys.columns c
-                    ON c.object_id = h.object_id
-                    AND c.column_id = t.column_id
-                WHERE h.object_id = @objectid
-                ORDER BY h.index_id, t.column_id";
-                command.CommandType = CommandType.Text;
-                command.Parameters.Add(new SqlParameter("objectid", objectID));
-
-                using (SqlDataReader reader = command.ExecuteReader())
+                using (SqlCommand command = connection.CreateCommand())
                 {
-                    string lastName = string.Empty;
-                    string lastIsPrimary = string.Empty;
-                    string lastIsUnique = string.Empty;
-                    string lastTypeDesc = string.Empty;
-                    List<string> memberList = new List<string>();
-                    List<string> nonUniqueList = new List<string>();
-                    while (reader.Read())
+                    command.CommandText = @"
+                    SELECT c.name AS column_name, h.is_primary_key, h.name, h.index_id, t.is_descending_key, h.type_desc, h.is_unique
+                    FROM sys.indexes h
+                    INNER JOIN sys.index_columns t
+                        ON t.object_id = h.object_id
+                        AND t.index_id = h.index_id
+                    INNER JOIN sys.columns c
+                        ON c.object_id = h.object_id
+                        AND c.column_id = t.column_id
+                    WHERE h.object_id = @objectid
+                    ORDER BY h.index_id, t.column_id";
+                    command.CommandType = CommandType.Text;
+                    command.Parameters.Add(new SqlParameter("objectid", objectID));
+
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
-                        if (lastName != reader["name"].ToString())
+                        string lastName = string.Empty;
+                        string lastIsPrimary = string.Empty;
+                        string lastIsUnique = string.Empty;
+                        string lastTypeDesc = string.Empty;
+                        List<string> memberList = new List<string>();
+                        List<string> nonUniqueList = new List<string>();
+                        while (reader.Read())
                         {
-                            if (lastName != string.Empty)
+                            if (lastName != reader["name"].ToString())
                             {
-                                Console.WriteLine(reader["is_unique"].ToString());
-                                if (lastIsUnique == "True")
+                                if (lastName != string.Empty)
                                 {
-                                    list.Add(string.Format(
-                                        "CONSTRAINT [{0}] {1}{2}\n\t(\n\t\t{3}\n\t)",
-                                        lastName,
-                                        lastIsPrimary == "True" ? "PRIMARY KEY " : (lastIsUnique == "True" ? "UNIQUE " : string.Empty),
-                                        lastTypeDesc,
-                                        string.Join(",\n\t\t", memberList.ToArray())));
+                                    Console.WriteLine(reader["is_unique"].ToString());
+                                    if (lastIsUnique == "True")
+                                    {
+                                        list.Add(string.Format(
+                                            "CONSTRAINT [{0}] {1}{2}\n\t(\n\t\t{3}\n\t)",
+                                            lastName,
+                                            lastIsPrimary == "True" ? "PRIMARY KEY " : (lastIsUnique == "True" ? "UNIQUE " : string.Empty),
+                                            lastTypeDesc,
+                                            string.Join(",\n\t\t", memberList.ToArray())));
+                                    }
+                                    else
+                                    {
+                                        nonUniqueList.Add(string.Format(
+                                            "CREATE {0} INDEX [{1}] ON [{2}].[{3}]\n(\n\t{4}\n)",
+                                            lastTypeDesc,
+                                            lastName,
+                                            schemaName,
+                                            tableName,
+                                            string.Join(",\n\t", memberList.ToArray())));
+                                    }
                                 }
-                                else
-                                {
-                                    nonUniqueList.Add(string.Format(
-                                        "CREATE {0} INDEX [{1}] ON [{2}].[{3}]\n(\n\t{4}\n)",
-                                        lastTypeDesc,
-                                        lastName,
-                                        schemaName,
-                                        tableName,
-                                        string.Join(",\n\t", memberList.ToArray())));
-                                }
+
+                                lastName = reader["name"].ToString();
+                                lastIsPrimary = reader["is_primary_key"].ToString();
+                                lastIsUnique = reader["is_unique"].ToString();
+                                lastTypeDesc = reader["type_desc"].ToString();
+
+                                memberList = new List<string>();
                             }
 
-                            lastName = reader["name"].ToString();
-                            lastIsPrimary = reader["is_primary_key"].ToString();
-                            lastIsUnique = reader["is_unique"].ToString();
-                            lastTypeDesc = reader["type_desc"].ToString();
-
-                            memberList = new List<string>();
+                            memberList.Add(string.Format(
+                                "[{0}] {1}",
+                                reader["column_name"].ToString(),
+                                reader["is_descending_key"].ToString() == "False" ? "ASC" : "DESC"));
                         }
 
-                        memberList.Add(string.Format(
-                            "[{0}] {1}",
-                            reader["column_name"].ToString(),
-                            reader["is_descending_key"].ToString() == "False" ? "ASC" : "DESC"));
-                    }
-
-                    if (lastName != string.Empty)
-                    {
-                        if (lastIsUnique == "True")
+                        if (lastName != string.Empty)
                         {
-                            list.Add(string.Format(
-                                "CONSTRAINT [{0}] {1}{2}\n\t(\n\t\t{3}\n\t)",
-                                lastName,
-                                lastIsPrimary == "True" ? "PRIMARY KEY " : (lastIsUnique == "True" ? "UNIQUE " : string.Empty),
-                                lastTypeDesc,
-                                string.Join(",\n\t\t", memberList.ToArray())));
+                            if (lastIsUnique == "True")
+                            {
+                                list.Add(string.Format(
+                                    "CONSTRAINT [{0}] {1}{2}\n\t(\n\t\t{3}\n\t)",
+                                    lastName,
+                                    lastIsPrimary == "True" ? "PRIMARY KEY " : (lastIsUnique == "True" ? "UNIQUE " : string.Empty),
+                                    lastTypeDesc,
+                                    string.Join(",\n\t\t", memberList.ToArray())));
+                            }
+                            else
+                            {
+                                nonUniqueList.Add(string.Format(
+                                    "CREATE {0} INDEX [{1}] ON [{2}].[{3}]\n(\n\t{4}\n)",
+                                    lastTypeDesc,
+                                    lastName,
+                                    schemaName,
+                                    tableName,
+                                    string.Join(",\n\t", memberList.ToArray())));
+                            }
                         }
-                        else
-                        {
-                            nonUniqueList.Add(string.Format(
-                                "CREATE {0} INDEX [{1}] ON [{2}].[{3}]\n(\n\t{4}\n)",
-                                lastTypeDesc,
-                                lastName,
-                                schemaName,
-                                tableName,
-                                string.Join(",\n\t", memberList.ToArray())));
-                        }
-                    }
 
-                    indexDef = string.Join("\n\nGO\n\n", nonUniqueList);
+                        indexDef = string.Join("\n\nGO\n\n", nonUniqueList);
+                    }
                 }
 
                 // Check constraint part
-                command = connection.CreateCommand();
-                command.CommandText = @"
-                SELECT h.name, h.definition
-                FROM sys.check_constraints h
-                WHERE h.parent_object_id = @objectid";
-
-                command.CommandType = CommandType.Text;
-                command.Parameters.Add(new SqlParameter("objectid", objectID));
-
-                this.Logger.Write("Sending command");
-                using (SqlDataReader reader = command.ExecuteReader())
+                using (SqlCommand command = connection.CreateCommand())
                 {
-                    while (reader.Read())
+                    command.CommandText = @"
+                    SELECT h.name, h.definition
+                    FROM sys.check_constraints h
+                    WHERE h.parent_object_id = @objectid";
+
+                    command.CommandType = CommandType.Text;
+                    command.Parameters.Add(new SqlParameter("objectid", objectID));
+
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
-                        constraintList.Add(string.Format(
-                            constraintDef,
-                            schemaName,
-                            tableName,
-                            reader["name"].ToString(),
-                            reader["definition"].ToString()));
+                        while (reader.Read())
+                        {
+                            constraintList.Add(string.Format(
+                                constraintDef,
+                                schemaName,
+                                tableName,
+                                reader["name"].ToString(),
+                                reader["definition"].ToString()));
+                        }
                     }
                 }
 
@@ -336,7 +346,6 @@ namespace Trilogic.Data
                 command.CommandType = CommandType.Text;
                 command.Parameters.Add(new SqlParameter("objectid", objectID));
 
-                this.Logger.Write("Sending command");
                 using (SqlDataReader reader = command.ExecuteReader())
                 {
                     while (reader.Read())
@@ -363,8 +372,6 @@ namespace Trilogic.Data
         {
             using (SqlConnection connection = this.CreateConnection())
             {
-                this.Logger.Write("Opening connection for procedure: " + objectID);
-
                 SqlCommand command = connection.CreateCommand();
                 command.CommandText = @"
                 SELECT h.object_id, h.definition
@@ -374,12 +381,11 @@ namespace Trilogic.Data
                 command.CommandType = CommandType.Text;
                 command.Parameters.Add(new SqlParameter("objectid", objectID));
 
-                this.Logger.Write("Sending command");
                 using (SqlDataReader reader = command.ExecuteReader())
                 {
                     if (reader.Read())
                     {
-                        return reader["definition"].ToString() + "GO\n";
+                        return reader["definition"].ToString().Replace("\r\n", "\n") + "GO\n";
                     }
                 }
 

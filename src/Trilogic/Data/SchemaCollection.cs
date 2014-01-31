@@ -16,7 +16,7 @@ namespace Trilogic
         /// <summary>
         /// The data list.
         /// </summary>
-        private List<SchemaData> dataList;
+        private Dictionary<string, SchemaData> dataList;
 
         /// <summary>
         /// The string list.
@@ -28,7 +28,7 @@ namespace Trilogic
         /// </summary>
         public SchemaCollection()
         {
-            this.dataList = new List<SchemaData>();
+            this.dataList = new Dictionary<string, SchemaData>();
             this.stringList = new List<string>();
         }
 
@@ -53,11 +53,11 @@ namespace Trilogic
         {
             get
             {
-                foreach (SchemaData schema in this.dataList)
+                foreach (KeyValuePair<string, SchemaData> schema in this.dataList)
                 {
-                    if (schema.ObjectID != objectID)
+                    if (schema.Value.ObjectID != objectID)
                     {
-                        return schema;
+                        return schema.Value;
                     }
                 }
 
@@ -74,12 +74,9 @@ namespace Trilogic
         {
             get
             {
-                foreach (SchemaData schema in this.dataList)
+                if (this.dataList.ContainsKey(name))
                 {
-                    if (schema.Name == name)
-                    {
-                        return schema;
-                    }
+                    return this.dataList[name];
                 }
 
                 return null;
@@ -92,7 +89,7 @@ namespace Trilogic
         /// <param name="schema">The schema.</param>
         public void Add(SchemaData schema)
         {
-            this.dataList.Add(schema);
+            this.dataList.Add(schema.Name, schema);
             this.stringList.Add(schema.Name);
         }
 
@@ -104,7 +101,7 @@ namespace Trilogic
         {
             foreach (SchemaData single in collection)
             {
-                this.dataList.Add(single);
+                this.Add(single);
             }
         }
 
@@ -125,7 +122,33 @@ namespace Trilogic
         /// <param name="schema">The schema.</param>
         public bool ContainsName(SchemaData schema)
         {
-            return this.stringList.Contains(schema.Name);
+            return this.ContainsName(schema.Name);
+        }
+
+        /// <summary>
+        /// Determines whether this instance is modified.
+        /// </summary>
+        /// <returns><c>true</c> if this instance is modified; otherwise, <c>false</c>.</returns>
+        /// <param name="schemaName">Schema name.</param>
+        /// <param name="base64Hash">Base64 hash.</param>
+        public bool IsModified(string schemaName, string base64Hash)
+        {
+            if (this.dataList[schemaName].Hash != base64Hash)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Determines whether this instance is modified.
+        /// </summary>
+        /// <returns><c>true</c> if this instance is modified; otherwise, <c>false</c>.</returns>
+        /// <param name="schema">The schema.</param>
+        public bool IsModified(SchemaData schema)
+        {
+            return this.IsModified(schema.Name, schema.Hash);
         }
 
         #region IEnumerable implementation
@@ -135,90 +158,8 @@ namespace Trilogic
         /// <returns>The enumerator.</returns>
         public IEnumerator GetEnumerator()
         {
-            return new SchemaEnumerator(this.dataList.ToArray());
+            return this.dataList.Values.GetEnumerator();
         }
         #endregion
-    }
-
-    /// <summary>
-    /// Schema enumerator.
-    /// </summary>
-    public class SchemaEnumerator : IEnumerator
-    {
-        /// <summary>
-        /// The schema.
-        /// </summary>
-        private SchemaData[] schema;
-
-        /// <summary>
-        /// The position.
-        /// </summary>
-        private int position = -1;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Trilogic.SchemaEnumerator"/> class.
-        /// </summary>
-        /// <param name="list">The List.</param>
-        public SchemaEnumerator(SchemaData[] list)
-        {
-            this.schema = list;
-        }
-
-        /// <summary>
-        /// Gets the current.
-        /// </summary>
-        /// <value>The current.</value>
-        object IEnumerator.Current
-        {
-            get
-            {
-                return this.Current;
-            }
-        }
-
-        /// <summary>
-        /// Gets the current element in the collection.
-        /// </summary>
-        /// <returns>The current element in the collection.</returns>
-        /// <exception cref="T:System.InvalidOperationException">The enumerator is positioned before the first element of the collection or after the last element.</exception>
-        /// <filterpriority>2</filterpriority>
-        /// <value>The current.</value>
-        public SchemaData Current
-        {
-            get
-            {
-                try
-                {
-                    return this.schema[this.position];
-                }
-                catch (IndexOutOfRangeException)
-                {
-                    throw new InvalidOperationException();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Advances the enumerator to the next element of the collection.
-        /// </summary>
-        /// <returns>true if the enumerator was successfully advanced to the next element; false if the enumerator has passed the
-        /// end of the collection.</returns>
-        /// <exception cref="T:System.InvalidOperationException">The collection was modified after the enumerator was created.</exception>
-        /// <filterpriority>2</filterpriority>
-        public bool MoveNext()
-        {
-            this.position++;
-            return this.position < this.schema.Length;
-        }
-
-        /// <summary>
-        /// Sets the enumerator to its initial position, which is before the first element in the collection.
-        /// </summary>
-        /// <exception cref="T:System.InvalidOperationException">The collection was modified after the enumerator was created.</exception>
-        /// <filterpriority>2</filterpriority>
-        public void Reset()
-        {
-            this.position = -1;
-        }
     }
 }
