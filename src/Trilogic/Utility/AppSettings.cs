@@ -90,6 +90,11 @@ namespace Trilogic.Utility
         /// <param name="path">The path.</param>
         public void ReadFromFile(string path)
         {
+            if (!File.Exists(path))
+            {
+                File.Create(path);
+            }
+
             using (FileStream file = File.OpenRead(path))
             {
                 TextReader reader = new StreamReader(file);

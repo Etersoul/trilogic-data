@@ -15,14 +15,14 @@ namespace Trilogic
     public partial class CompareWindow : Gtk.Window
     {
         /// <summary>
-        /// The editor local.
+        /// The document local.
         /// </summary>
-        private Mono.TextEditor.TextEditor editorLocal;
+        private TextDocument docLocal;
 
         /// <summary>
-        /// The editor D.
+        /// The document database.
         /// </summary>
-        private Mono.TextEditor.TextEditor editorDB;
+        private TextDocument docDB;
 
         /// <summary>
         /// The file side.
@@ -51,13 +51,16 @@ namespace Trilogic
             this.Build();
             this.parent = parent;
 
-            this.editorLocal = new Mono.TextEditor.TextEditor();
-            this.editorDB = new Mono.TextEditor.TextEditor();
+            this.docLocal = new TextDocument();
+            this.docDB = new TextDocument();
+
+            TextEditor editorLocal = new TextEditor(docLocal);
+            TextEditor editorDB = new TextEditor(docDB);
 
             Gtk.ScrolledWindow scrollLocal = new Gtk.ScrolledWindow();
             Gtk.ScrolledWindow scrollDB = new Gtk.ScrolledWindow();
-            scrollLocal.Add(this.editorLocal);
-            scrollDB.Add(this.editorDB);
+            scrollLocal.Add(editorLocal);
+            scrollDB.Add(editorDB);
 
             this.hbox1.Add(scrollDB);
             this.hbox1.Add(scrollLocal);
@@ -69,10 +72,6 @@ namespace Trilogic
             childDB.Position = 0;
 
             this.ShowAll();
-
-            this.editorLocal.Text = string.Empty;
-            this.editorLocal.Caret.Column = 1;
-            this.editorLocal.Caret.Line = 1;
 
             this.Title += " - " + compareName;
 
@@ -99,9 +98,6 @@ namespace Trilogic
             {
                 databaseText = this.GetDBSchema(this.databaseSide);
             }
-
-            TextDocument docLocal = this.editorLocal.Document;
-            TextDocument docDB = this.editorDB.Document;
 
             if (this.checkBoxDiff.Active)
             {
@@ -166,25 +162,25 @@ namespace Trilogic
                     Console.WriteLine("Insert B: " + block.InsertStartB + " " + block.InsertCountB + " ... Delete A: " + block.DeleteStartA + " " + block.DeleteCountA);
                 }
 
-                docDB.Text = databaseText;
-                docLocal.Text = fileText;
+                this.docDB.Text = databaseText;
+                this.docLocal.Text = fileText;
 
                 foreach (KeyValuePair<int, TextLineMarker> single in databaseMarker)
                 {
-                    docDB.AddMarker(single.Key, single.Value);
+                    this.docDB.AddMarker(single.Key, single.Value);
                 }
 
                 foreach (KeyValuePair<int, TextLineMarker> single in fileMarker)
                 {
-                    docLocal.AddMarker(single.Key, single.Value);
+                    this.docLocal.AddMarker(single.Key, single.Value);
                 }
 
-                docDB.CommitUpdateAll();
+                this.docDB.CommitUpdateAll();
             }
             else
             {
-                docDB.Text = databaseText;
-                docLocal.Text = fileText;
+                this.docDB.Text = databaseText;
+                this.docLocal.Text = fileText;
             }
         }
 
