@@ -581,6 +581,7 @@ namespace Trilogic
             TreeModel model = this.treeviewFile.Model;
             model.GetIterFirst(out iter);
             GtkLogService.Instance.Write("Start schema restoration process.");
+            List<string> fk = new List<string>();
 
             do
             {
@@ -599,11 +600,20 @@ namespace Trilogic
                     if (active == true)
                     {
                         SchemaData schema = (SchemaData)model.GetValue(iterChild, 4);
+                        string mainQuery = schema.Data;
                         if(schema.Type == SchemaDataType.Table)
                         {
                             if(this.Sql.IsTableExist(schema.Name))
                             {
                                 this.Sql.RunCommand("DROP TABLE " + schema.Name);
+                            }
+
+                            // Search for foreign key and strip it from the main query, process it later
+                            int idx = schema.Data.IndexOf("-------- FOREIGN KEY --------");
+                            if(idx != -1)
+                            {
+                                mainQuery = schema.Data.Substring(0, idx);
+                                fk.Add(schema.Data.Substring(idx));
                             }
                         }
                         else if(schema.Type == SchemaDataType.StoredProcedure)
@@ -614,12 +624,17 @@ namespace Trilogic
                             }
                         }
 
-                        this.Sql.RunCommand(schema.Data);
+                        this.Sql.RunCommand(mainQuery);
                     }
                 }
                 while (model.IterNext(ref iterChild));
             }
             while (model.IterNext(ref iter));
+
+            if (fk.Count != 0)
+            {
+                this.Sql.RunCommand(string.Join("\n\n", fk.ToArray()));
+            }
 
             GtkLogService.Instance.Write("Schema restoration complete.");
         }

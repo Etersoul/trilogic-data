@@ -152,14 +152,17 @@ namespace Trilogic.Data
         /// <param name="objectID">Table I.</param>
         public string GetTableSchema(int objectID)
         {
-            List<string> list = new List<string>();
-            List<string> constraintList = new List<string>();
+            List<string> columnList = new List<string>();
+            List<string> nonUniqueList = new List<string>();
+            List<string> checkConstraintList = new List<string>();
+            List<string> foreignKeyList = new List<string>();
+            List<string> completeList = new List<string>();
             string tableName = string.Empty;
             string schemaName = string.Empty;
-            string definition = "CREATE TABLE [{0}].[{1}] (\n\t{2}\n);\n\n{3}\n\n{4}";
+            string tableDef = "CREATE TABLE [{0}].[{1}] (\n\t{2}\n);";
             string columnDef = "[{0}] [{1}]{2} {3}";
             string constraintDef = "ALTER TABLE [{0}].[{1}] WITH CHECK ADD CONSTRAINT [{2}] CHECK ({3});";
-            string indexDef = string.Empty;
+            string foreignKeyDef = "ALTER TABLE [{0}].[{1}] WITH CHECK ADD CONSTRAINT [{2}] FOREIGN KEY ({3})\nREFERENCES [{4}].[{5}] ({6});";
 
             using (SqlConnection connection = this.CreateConnection())
             {
@@ -218,7 +221,8 @@ namespace Trilogic.Data
                                 }
                                 else
                                 {
-                                    // Don't know why, but nchar and nvarchar have length 2 times more than it should from sys.columns
+                                    // Since nchar and nvarchar use 2 bytes for every 1 max length, the saved max length on sys.columns should
+                                    // be divided by 2
                                     if (reader["type_name"].ToString() == "nchar" || reader["type_name"].ToString() == "nvarchar")
                                     {
                                         maxLength = "(" + (Convert.ToInt32(reader["max_length"]) / 2) + ")";
@@ -234,7 +238,7 @@ namespace Trilogic.Data
                                 maxLength = string.Empty;
                             }
 
-                            list.Add(string.Format(
+                            columnList.Add(string.Format(
                                 columnDef,
                                 reader["column_name"].ToString(),
                                 reader["type_name"].ToString(),
@@ -268,7 +272,6 @@ namespace Trilogic.Data
                         string lastIsUnique = string.Empty;
                         string lastTypeDesc = string.Empty;
                         List<string> memberList = new List<string>();
-                        List<string> nonUniqueList = new List<string>();
                         while (reader.Read())
                         {
                             if (lastName != reader["name"].ToString())
@@ -278,7 +281,7 @@ namespace Trilogic.Data
                                     Console.WriteLine(reader["is_unique"].ToString());
                                     if (lastIsUnique == "True")
                                     {
-                                        list.Add(string.Format(
+                                        columnList.Add(string.Format(
                                             "CONSTRAINT [{0}] {1}{2}\n\t(\n\t\t{3}\n\t)",
                                             lastName,
                                             lastIsPrimary == "True" ? "PRIMARY KEY " : (lastIsUnique == "True" ? "UNIQUE " : string.Empty),
@@ -315,7 +318,7 @@ namespace Trilogic.Data
                         {
                             if (lastIsUnique == "True")
                             {
-                                list.Add(string.Format(
+                                columnList.Add(string.Format(
                                     "CONSTRAINT [{0}] {1}{2}\n\t(\n\t\t{3}\n\t)",
                                     lastName,
                                     lastIsPrimary == "True" ? "PRIMARY KEY " : (lastIsUnique == "True" ? "UNIQUE " : string.Empty),
@@ -333,9 +336,18 @@ namespace Trilogic.Data
                                     string.Join(",\n\t", memberList.ToArray())));
                             }
                         }
-
-                        indexDef = string.Join("\n\n", nonUniqueList);
                     }
+                }
+
+                completeList.Add(string.Format(
+                    tableDef,
+                    schemaName,
+                    tableName,
+                    string.Join(",\n\t", columnList)));
+
+                if (nonUniqueList.Count != 0)
+                {
+                    completeList.Add(string.Join("\n\n", nonUniqueList.ToArray()));
                 }
 
                 // Check constraint part
@@ -353,7 +365,7 @@ namespace Trilogic.Data
                     {
                         while (reader.Read())
                         {
-                            constraintList.Add(string.Format(
+                            checkConstraintList.Add(string.Format(
                                 constraintDef,
                                 schemaName,
                                 tableName,
@@ -363,33 +375,91 @@ namespace Trilogic.Data
                     }
                 }
 
-                // Foreign key constraint
-                /*                
-                command = connection.CreateCommand();
-                command.CommandText = @"
-                SELECT h.name AS column_name, t.name AS type_name
-                FROM sys.foreign_keys h
-                WHERE h.parent_object_id = @objectid
-                ORDER BY h.column_id";
-
-                command.CommandType = CommandType.Text;
-                command.Parameters.Add(new SqlParameter("objectid", objectID));
-
-                using (SqlDataReader reader = command.ExecuteReader())
+                if (checkConstraintList.Count != 0)
                 {
-                    while (reader.Read())
+                    completeList.Add(string.Join("\n\n", checkConstraintList.ToArray()));
+                }
+
+                // Foreign key constraint
+                Dictionary<int, Dictionary<string, string>> keys = new Dictionary<int, Dictionary<string, string>>();
+                using (SqlCommand command = connection.CreateCommand())
+                {
+                    command.CommandText = @"
+                    SELECT f.object_id, f.name, t.name AS table_name, s.name AS schema_name
+                    FROM sys.foreign_keys f
+                    INNER JOIN sys.tables t
+                        ON t.object_id = f.referenced_object_id
+                    INNER JOIN sys.schemas s
+                        ON s.schema_id = t.schema_id
+                    WHERE f.parent_object_id = @objectid";
+
+                    command.CommandType = CommandType.Text;
+                    command.Parameters.Add(new SqlParameter("objectid", objectID));
+
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
-                        list.Add(string.Format(
-                            columnDef,
-                            reader["column_name"].ToString(),
-                            reader["type_name"].ToString(),
-                            reader["max_length"].ToString() != reader["max_length_default"].ToString() ? "(" + reader["max_length"] + ")" : string.Empty,
-                            reader["is_nullable"].ToString() == "False" ? "NOT NULL" : "NULL"));
+                        while (reader.Read())
+                        {
+                            Dictionary<string, string> col = new Dictionary<string, string>();
+                            col.Add("object_id", reader["object_id"].ToString());
+                            col.Add("fk_name", reader["name"].ToString());
+                            col.Add("referenced_table_name", reader["table_name"].ToString());
+                            col.Add("referenced_schema_name", reader["schema_name"].ToString());
+
+                            keys.Add((int)reader["object_id"], col);
+                        }
                     }
-                }*/
+                }
+
+                foreach (KeyValuePair<int, Dictionary<string, string>> fk in keys)
+                {
+                    List<string> parent = new List<string>();
+                    List<string> reference = new List<string>();
+                    using (SqlCommand command = connection.CreateCommand())
+                    {
+                        command.CommandText = @"
+                        SELECT c1.name AS parent_name, c2.name AS referenced_name
+                        FROM sys.foreign_key_columns f
+                        INNER JOIN sys.columns c1
+                            ON c1.object_id = f.parent_object_id
+                            AND c1.column_id = f.parent_column_id
+                        INNER JOIN sys.columns c2
+                            ON c2.object_id = f.referenced_object_id
+                            AND c2.column_id = f.referenced_column_id
+                        WHERE f.constraint_object_id = @objectid
+                        ORDER BY f.constraint_column_id";
+                        command.CommandType = CommandType.Text;
+                        command.Parameters.Add(new SqlParameter("objectid", fk.Value["object_id"]));
+
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                parent.Add("[" + reader["parent_name"].ToString() + "]");
+                                reference.Add("[" + reader["referenced_name"].ToString() + "]");
+                            }
+                        }
+                    }
+
+                    foreignKeyList.Add(string.Format(
+                        foreignKeyDef,
+                        schemaName,
+                        tableName,
+                        fk.Value["fk_name"].ToString(),
+                        string.Join(", ", parent.ToArray()),
+                        fk.Value["referenced_schema_name"].ToString(),
+                        fk.Value["referenced_table_name"].ToString(),
+                        string.Join(", ", reference.ToArray())));
+                }
+
+                if (foreignKeyList.Count != 0)
+                {
+                    foreignKeyList.Insert(0, "-------- FOREIGN KEY --------");
+                    completeList.Add(string.Join("\n\n", foreignKeyList.ToArray()));
+                }
             }
 
-            return string.Format(definition, schemaName, tableName, string.Join(",\n\t", list), indexDef, string.Join("\n\n", constraintList));
+            return string.Join("\n\n", completeList);
         }
 
         /// <summary>
