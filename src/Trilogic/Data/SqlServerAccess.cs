@@ -194,7 +194,7 @@ namespace Trilogic.Data
                 {
                     command.CommandText = @"
                     SELECT h.name AS column_name, t.name AS type_name, h.is_nullable, h.max_length, h.precision, h.scale,
-                        t.max_length AS max_length_default, h.is_identity, t.name AS type_name
+                        t.max_length AS max_length_default, h.is_identity
                     FROM sys.columns h
                     INNER JOIN sys.types t
                     ON t.user_type_id = h.user_type_id
@@ -490,6 +490,95 @@ namespace Trilogic.Data
 
                 return null;
             }
+        }
+
+        public string GetAllDataQuery(int objectID)
+        {
+            List<string> columns = new List<string>();
+            List<string> dataList = new List<string>();
+            string cmd = string.Empty;
+            string tableName = string.Empty;
+            string schemaName = string.Empty;
+
+            using (SqlConnection connection = this.CreateConnection())
+            {
+                using (SqlCommand command = connection.CreateCommand())
+                {
+                    command.CommandText = @"
+                    SELECT s.name AS table_name, h.name AS schema_name
+                    FROM sys.tables s
+                    INNER JOIN sys.schemas h
+                        ON h.schema_id = s.schema_id
+                    WHERE s.type = 'U'
+                        AND s.object_id = @objectid
+                    ORDER BY s.name";
+                    command.Parameters.Add(new SqlParameter("objectid", objectID));
+
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            tableName = reader["table_name"].ToString();
+                            schemaName = reader["schema_name"].ToString();
+                        }
+                    }
+                }
+
+                using (SqlCommand command = connection.CreateCommand())
+                {
+                    command.CommandText = @"
+                    SELECT h.name AS column_name, t.name AS type_name
+                    FROM sys.columns h
+                    INNER JOIN sys.types t
+                    ON t.user_type_id = h.user_type_id
+                    WHERE h.object_id = @objectid
+                    ORDER BY h.column_id";
+
+                    command.CommandType = CommandType.Text;
+                    command.Parameters.Add(new SqlParameter("objectid", objectID));
+
+
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            columns.Add("[" + reader["column_name"].ToString() + "]");
+                        }
+                    }
+                }
+
+                using (SqlCommand command = connection.CreateCommand())
+                {
+                    // Sanitize the schema and table name from using closing square bracket
+                    command.CommandText = string.Format(@"
+                        SELECT *
+                        FROM [{0}].[{1}]",
+                        schemaName.Replace("]", ""),
+                        tableName.Replace("]", ""));
+                    command.CommandType = CommandType.Text;
+
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        List<string> column = new List<string>();
+                        while (reader.Read())
+                        {
+                            foreach (object value in reader)
+                            {
+                                column.Add("'" + value.ToString().Replace("'", "\\'") + "'");
+                            }
+
+                            dataList.Add("(" + string.Join(", ", column.ToArray()) + ")");
+                        }
+                    }
+                }
+            }
+
+            return string.Format(
+                "INSERT INTO [{0}].[{1}] ({2}) VALUES ({3});",
+                schemaName,
+                tableName,
+                string.Join(", ", columns.ToArray()),
+                string.Join(", ", dataList.ToArray()));
         }
 
         /// <summary>

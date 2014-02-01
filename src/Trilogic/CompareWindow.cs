@@ -7,6 +7,8 @@ namespace Trilogic
     using System;
     using System.Collections.Generic;
     using System.Text.RegularExpressions;
+
+    using DiffPlex.Model;
     using Mono.TextEditor;
 
     /// <summary>
@@ -14,6 +16,16 @@ namespace Trilogic
     /// </summary>
     public partial class CompareWindow : Gtk.Window
     {
+        /// <summary>
+        /// The editor for local file.
+        /// </summary>
+        private TextEditor editorLocal;
+
+        /// <summary>
+        /// The editor for database.
+        /// </summary>
+        private TextEditor editorDB;
+
         /// <summary>
         /// The document local.
         /// </summary>
@@ -54,13 +66,13 @@ namespace Trilogic
             this.docLocal = new TextDocument();
             this.docDB = new TextDocument();
 
-            TextEditor editorLocal = new TextEditor(docLocal);
-            TextEditor editorDB = new TextEditor(docDB);
+            this.editorLocal = new TextEditor(this.docLocal);
+            this.editorDB = new TextEditor(this.docDB);
 
             Gtk.ScrolledWindow scrollLocal = new Gtk.ScrolledWindow();
             Gtk.ScrolledWindow scrollDB = new Gtk.ScrolledWindow();
-            scrollLocal.Add(editorLocal);
-            scrollDB.Add(editorDB);
+            scrollLocal.Add(this.editorLocal);
+            scrollDB.Add(this.editorDB);
 
             this.hbox1.Add(scrollDB);
             this.hbox1.Add(scrollLocal);
@@ -116,54 +128,137 @@ namespace Trilogic
                     BackgroundColor = new Cairo.Color(1, 1, 0.6)
                 };
 
-                DiffPlex.Model.DiffResult result = new DiffPlex.Differ().CreateLineDiffs(databaseText, fileText, true);
+                StyleTextLineMarker grayMarker = new StyleTextLineMarker()
+                {
+                    BackgroundColor = new Cairo.Color(0.6, 0.6, 0.6)
+                };
 
-                int spaceA = 0;
-                ////int spaceB = 0;
+                DiffResult result = new DiffPlex.Differ().CreateLineDiffs(databaseText, fileText, false);
 
                 Dictionary<int, TextLineMarker> databaseMarker = new Dictionary<int, TextLineMarker>();
                 Dictionary<int, TextLineMarker> fileMarker = new Dictionary<int, TextLineMarker>();
 
-                foreach (DiffPlex.Model.DiffBlock block in result.DiffBlocks)
+                string[] fileTextArray = fileText.Split('\n');
+                string[] databaseTextArray = databaseText.Split('\n');
+
+                List<string> processedFile = new List<string>();
+                List<string> processedDatabase = new List<string>();
+
+                int i1 = 0; // original database line number, start from 0
+                int i2 = 0; // original file line number, start from 0
+                int d1 = -1;
+                int d2 = -1;
+
+                DiffBlock currentBlock = new DiffBlock(-1, 0, -1, 0);
+                if (result.DiffBlocks.Count > 0)
                 {
-                    databaseText = this.InsertLine(databaseText, block.InsertStartB, block.InsertCountB);
-
-                    int modifyLine = Math.Abs(block.InsertCountB - block.DeleteCountA);
-
-                    for (int i = 0; i < block.InsertCountB; i++)
-                    {
-                        if (i != block.InsertCountB - 1)
-                        {
-                            databaseMarker.Add(block.InsertStartB + i + 1 + spaceA, deleteMarker);
-                            fileMarker.Add(block.InsertStartB + i + 1, addMarker);
-                        }
-                        else
-                        {
-                            ////databaseMarker.Add(block.InsertStartB + i + 1 + spaceA, modifyMarker);
-                        }
-                    }
-
-                    spaceA += block.InsertCountB - 1;
-
-                    for (int i = 0; i < block.DeleteCountA; i++)
-                    {
-                        int a = block.DeleteStartA + i + 1 + spaceA;
-                        if (a >= block.InsertStartB && a <= block.InsertStartB + block.InsertCountB)
-                        {
-                            databaseMarker.Add(block.DeleteStartA + i + 1 + spaceA, modifyMarker);
-                            ////fileMarker.Add(block.InsertStartB + 1, modifyMarker);
-                        }
-                        else
-                        {
-                            databaseMarker.Add(block.DeleteStartA + i + 1 + spaceA, deleteMarker);
-                        }
-                    }
-
-                    Console.WriteLine("Insert B: " + block.InsertStartB + " " + block.InsertCountB + " ... Delete A: " + block.DeleteStartA + " " + block.DeleteCountA);
+                    currentBlock = result.DiffBlocks[0];
+                    result.DiffBlocks.RemoveAt(0);
                 }
 
-                this.docDB.Text = databaseText;
-                this.docLocal.Text = fileText;
+                for (int i = 0; true; i++)
+                {
+                    bool change = false;
+
+                    if (i1 == currentBlock.DeleteStartA)
+                    {
+                        d1 = 0;
+                    }
+
+                    if (d1 != -1)
+                    {
+                        change = true;
+                        if (d1 < currentBlock.DeleteCountA)
+                        {
+                            processedDatabase.Add(databaseTextArray[i1]);
+                            databaseMarker.Add(i + 1, deleteMarker);
+
+                            processedFile.Add(string.Empty);
+                            fileMarker.Add(i + 1, deleteMarker);
+
+                            i1++;
+                            d1++;
+                        }
+                        else
+                        {
+                            d1 = -1;
+                        }
+                    }
+
+                    if (i2 == currentBlock.InsertStartB)
+                    {
+                        d2 = 0;
+                    }
+
+                    if (d2 != -1)
+                    {
+                        change = true;
+                        if (d2 < currentBlock.InsertCountB)
+                        {
+                            processedDatabase.Add(string.Empty);
+                            if (databaseMarker.ContainsKey(i + 1))
+                            {
+                                databaseMarker[i + 1] = modifyMarker;
+                            }
+                            else
+                            {
+                                databaseMarker.Add(i + 1, addMarker);
+                            }
+
+                            processedFile.Add(fileTextArray[i2]);
+
+                            if (fileMarker.ContainsKey(i + 1))
+                            {
+                                fileMarker[i + 1] = modifyMarker;
+                            }
+                            else
+                            {
+                                fileMarker.Add(i + 1, addMarker);
+                            }
+
+                            i2++;
+                            d2++;
+                        }
+                        else
+                        {
+                            d2 = -1;
+                        }
+                    }
+
+                    // Stop the iteration if we are on the last line now
+                    if (i1 >= databaseTextArray.Length && i2 >= fileTextArray.Length)
+                    {
+                        break;
+                    }
+
+                    if (d1 == -1 && d2 == -1 && change)
+                    {
+                        if (result.DiffBlocks.Count > 0)
+                        {
+                            currentBlock = result.DiffBlocks[0];
+                            result.DiffBlocks.RemoveAt(0);
+                        }
+                        else
+                        {
+                            currentBlock = new DiffBlock(-1, 0, -1, 0);
+                        }
+
+                        change = false;
+                    }
+
+                    // No changes, insert the original text without marker
+                    if (!change)
+                    {
+                        processedDatabase.Add(databaseTextArray[i1]);
+                        processedFile.Add(fileTextArray[i2]);
+
+                        i1++;
+                        i2++;
+                    }
+                }
+
+                this.docDB.Text = string.Join("\n", processedDatabase.ToArray());
+                this.docLocal.Text = string.Join("\n", processedFile.ToArray());
 
                 foreach (KeyValuePair<int, TextLineMarker> single in databaseMarker)
                 {
