@@ -44,6 +44,11 @@ namespace Trilogic
         Modified,
 
         /// <summary>
+        /// The conflicted.
+        /// </summary>
+        Conflicted,
+
+        /// <summary>
         /// The none.
         /// </summary>
         None
@@ -98,6 +103,12 @@ namespace Trilogic
         /// </summary>
         /// <value>The data.</value>
         public string Data { get; set; }
+
+        /// <summary>
+        /// Gets or sets the modify date.
+        /// </summary>
+        /// <value>The modify date.</value>
+        public DateTime ModifyDate { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether this instance hash.

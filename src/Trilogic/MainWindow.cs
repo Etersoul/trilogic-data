@@ -301,6 +301,11 @@ namespace Trilogic
                 return;
             }
 
+            SchemaCollection modifiedDBTables = new SchemaCollection();
+            SchemaCollection modifiedDBProcedure = new SchemaCollection();
+            SchemaCollection modifiedFileTables = new SchemaCollection();
+            SchemaCollection modifiedFileProcedure = new SchemaCollection();
+
             // Add status to the list
             foreach (SchemaData table in this.listFileTables)
             {
@@ -327,6 +332,7 @@ namespace Trilogic
                 if (this.listFileTables.IsModified(table))
                 {
                     table.Status = SchemaDataStatus.Modified;
+                    modifiedDBTables.Add(table);
                 }
             }
 
@@ -356,6 +362,36 @@ namespace Trilogic
                 if (this.listFileProcedures.IsModified(sp))
                 {
                     sp.Status = SchemaDataStatus.Modified;
+                    modifiedDBProcedure.Add(sp);
+                }
+            }
+
+            SchemaCollection cache = this.ReadSyncLog();
+
+            // Get list for conflicted data
+            foreach (SchemaData table in modifiedDBTables)
+            {
+                if (cache.ContainsName(table) && cache[table.Name].ModifyDate.ToString("s") != table.ModifyDate.ToString("s"))
+                {
+                    table.Status = SchemaDataStatus.Conflicted;
+
+                    if (this.listFileTables.ContainsName(table))
+                    {
+                        this.listFileTables[table.Name].Status = SchemaDataStatus.Conflicted;
+                    }
+                }
+            }
+
+            foreach (SchemaData sp in modifiedDBProcedure)
+            {
+                if (cache.ContainsName(sp) && cache[sp.Name].ModifyDate.ToString("s") != sp.ModifyDate.ToString("s"))
+                {
+                    sp.Status = SchemaDataStatus.Conflicted;
+
+                    if (this.listFileProcedures.ContainsName(sp))
+                    {
+                        this.listFileProcedures[sp.Name].Status = SchemaDataStatus.Conflicted;
+                    }
                 }
             }
 
@@ -397,6 +433,8 @@ namespace Trilogic
             TreeIter iterProcedure2 = list2.AppendValues("Stored Procedures");
             this.treeviewFile.Model = list2;
 
+            SchemaCollection cache = new SchemaCollection();
+
             // Render to the tree view
             foreach (SchemaData file in this.combinedFile)
             {
@@ -430,6 +468,12 @@ namespace Trilogic
                     color = "#ffff99";
                     check = true;
                     status = "#";
+                }
+                else if (file.Status == SchemaDataStatus.Conflicted)
+                {
+                    color = "#ff9999";
+                    check = false;
+                    status = "?";
                 }
 
                 TreeIter localIter = iterTable2;
@@ -473,6 +517,12 @@ namespace Trilogic
                     color = "#ffff99";
                     check = true;
                     status = "#";
+                }
+                else if (str.Status == SchemaDataStatus.Conflicted)
+                {
+                    color = "#ff9999";
+                    check = false;
+                    status = "?";
                 }
 
                 TreeIter localIter = iterTable1;
@@ -524,6 +574,30 @@ namespace Trilogic
         }
 
         /// <summary>
+        /// Reads the sync log.
+        /// </summary>
+        /// <returns>The sync log.</returns>
+        protected SchemaCollection ReadSyncLog()
+        {
+            SchemaLogBuilder builder = new SchemaLogBuilder(this.appSettings.DirectoryPath, this.appSettings.DBName);
+            return builder.ReadLog();
+        }
+
+        /// <summary>
+        /// Updates the sync log.
+        /// </summary>
+        protected void UpdateSyncLog()
+        {
+            SchemaCollection newTables = this.Sql.GetTables();
+            SchemaCollection newProcedures = this.Sql.GetStoredProcedure();
+
+            SchemaLogBuilder builder = new SchemaLogBuilder(this.appSettings.DBName);
+            builder.Append(newTables);
+            builder.Append(newProcedures);
+            builder.Commit(this.appSettings.DirectoryPath);
+        }
+
+        /// <summary>
         /// Raises the button right clicked event.
         /// </summary>
         /// <param name="sender">The sender.</param>
@@ -541,7 +615,7 @@ namespace Trilogic
                 bool isChild = model.IterChildren(out iterChild, iter);
 
                 // Ignore the tree that doesn't have child
-                if(!isChild)
+                if (!isChild)
                 {
                     continue;
                 }
@@ -552,20 +626,21 @@ namespace Trilogic
                     if (active == true)
                     {
                         SchemaData schema = (SchemaData)model.GetValue(iterChild, 4);
-                        if(schema.Type == SchemaDataType.Table)
+                        if (schema.Type == SchemaDataType.Table)
                         {
                             File.WriteAllText(this.entryFolder.Text + "/" + AppSettings.TableDir + "/" + schema.Name + "." + schema.Type.ToString() + ".sql", this.Sql.GetTableSchema(schema.ObjectID));
                         }
-                        else if(schema.Type == SchemaDataType.StoredProcedure)
+                        else if (schema.Type == SchemaDataType.StoredProcedure)
                         {
                             File.WriteAllText(this.entryFolder.Text + "/" + AppSettings.ProcedureDir + "/" + schema.Name + "." + schema.Type.ToString() + ".sql", this.Sql.GetStoredProcedureDefinition(schema.ObjectID));
                         }
-
                      }
                 }
                 while (model.IterNext(ref iterChild));
             }
             while (model.IterNext(ref iter));
+
+            this.UpdateSyncLog();
 
             GtkLogService.Instance.Write("Schema dumping complete.");
         }
@@ -573,8 +648,8 @@ namespace Trilogic
         /// <summary>
         /// Raises the button left clicked event.
         /// </summary>
-        /// <param name="sender">Sender.</param>
-        /// <param name="e">E.</param>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">Event arguments.</param>
         protected void OnButtonLeftClicked(object sender, EventArgs e)
         {
             TreeIter iter;
@@ -589,7 +664,7 @@ namespace Trilogic
                 bool isChild = model.IterChildren(out iterChild, iter);
 
                 // Ignore the tree that doesn't have child
-                if(!isChild)
+                if (!isChild)
                 {
                     continue;
                 }
@@ -601,24 +676,24 @@ namespace Trilogic
                     {
                         SchemaData schema = (SchemaData)model.GetValue(iterChild, 4);
                         string mainQuery = schema.Data;
-                        if(schema.Type == SchemaDataType.Table)
+                        if (schema.Type == SchemaDataType.Table)
                         {
-                            if(this.Sql.IsTableExist(schema.Name))
+                            if (this.Sql.IsTableExist(schema.Name))
                             {
                                 this.Sql.RunCommand("DROP TABLE " + schema.Name);
                             }
 
                             // Search for foreign key and strip it from the main query, process it later
                             int idx = schema.Data.IndexOf("-------- FOREIGN KEY --------");
-                            if(idx != -1)
+                            if (idx != -1)
                             {
                                 mainQuery = schema.Data.Substring(0, idx);
                                 fk.Add(schema.Data.Substring(idx));
                             }
                         }
-                        else if(schema.Type == SchemaDataType.StoredProcedure)
+                        else if (schema.Type == SchemaDataType.StoredProcedure)
                         {
-                            if(this.Sql.IsProcedureExist(schema.Name))
+                            if (this.Sql.IsProcedureExist(schema.Name))
                             {
                                 this.Sql.RunCommand("DROP PROCEDURE " + schema.Name);
                             }
@@ -635,6 +710,8 @@ namespace Trilogic
             {
                 this.Sql.RunCommand(string.Join("\n\n", fk.ToArray()));
             }
+
+            this.UpdateSyncLog();
 
             GtkLogService.Instance.Write("Schema restoration complete.");
         }

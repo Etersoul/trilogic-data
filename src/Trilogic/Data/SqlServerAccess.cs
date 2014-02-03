@@ -77,7 +77,7 @@ namespace Trilogic.Data
 
                 SqlCommand command = connection.CreateCommand();
                 command.CommandText = @"
-                SELECT h.name + '.' + s.name AS name, s.object_id
+                SELECT h.name + '.' + s.name AS name, s.object_id, s.modify_date
                 FROM sys.tables s
                 INNER JOIN sys.schemas h
                     ON h.schema_id = s.schema_id
@@ -95,7 +95,8 @@ namespace Trilogic.Data
                                 Name = (string)reader["name"],
                                 ObjectID = (int)reader["object_id"],
                                 Type = SchemaDataType.Table,
-                                Data = this.GetTableSchema((int)reader["object_id"])
+                                Data = this.GetTableSchema((int)reader["object_id"]),
+                                ModifyDate = (DateTime)reader["modify_date"]
                             });
                     }
                 }
@@ -118,7 +119,7 @@ namespace Trilogic.Data
 
                 SqlCommand command = connection.CreateCommand();
                 command.CommandText = @"
-                SELECT h.name + '.' + s.name AS name, s.object_id
+                SELECT h.name + '.' + s.name AS name, s.object_id, s.modify_date
                 FROM sys.procedures s
                 INNER JOIN sys.schemas h
                 ON h.schema_id = s.schema_id
@@ -136,7 +137,8 @@ namespace Trilogic.Data
                                 Name = (string)reader["name"],
                                 ObjectID = (int)reader["object_id"],
                                 Type = SchemaDataType.StoredProcedure,
-                                Data = this.GetStoredProcedureDefinition((int)reader["object_id"])
+                                Data = this.GetStoredProcedureDefinition((int)reader["object_id"]),
+                                ModifyDate = (DateTime)reader["modify_date"]
                             });
                     }
                 }
@@ -278,7 +280,6 @@ namespace Trilogic.Data
                             {
                                 if (lastName != string.Empty)
                                 {
-                                    Console.WriteLine(reader["is_unique"].ToString());
                                     if (lastIsUnique == "True")
                                     {
                                         columnList.Add(string.Format(
@@ -492,6 +493,11 @@ namespace Trilogic.Data
             }
         }
 
+        /// <summary>
+        /// Gets all data query.
+        /// </summary>
+        /// <returns>The all data query.</returns>
+        /// <param name="objectID">Object ID.</param>
         public string GetAllDataQuery(int objectID)
         {
             List<string> columns = new List<string>();
@@ -537,7 +543,6 @@ namespace Trilogic.Data
                     command.CommandType = CommandType.Text;
                     command.Parameters.Add(new SqlParameter("objectid", objectID));
 
-
                     using (SqlDataReader reader = command.ExecuteReader())
                     {
                         while (reader.Read())
@@ -550,11 +555,12 @@ namespace Trilogic.Data
                 using (SqlCommand command = connection.CreateCommand())
                 {
                     // Sanitize the schema and table name from using closing square bracket
-                    command.CommandText = string.Format(@"
+                    command.CommandText = string.Format(
+                        @"
                         SELECT *
                         FROM [{0}].[{1}]",
-                        schemaName.Replace("]", ""),
-                        tableName.Replace("]", ""));
+                        schemaName.Replace("]", string.Empty),
+                        tableName.Replace("]", string.Empty));
                     command.CommandType = CommandType.Text;
 
                     using (SqlDataReader reader = command.ExecuteReader())

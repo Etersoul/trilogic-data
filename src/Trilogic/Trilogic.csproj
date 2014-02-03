@@ -95,6 +95,7 @@
     <Compile Include="CompareWindow.cs" />
     <Compile Include="gtk-gui\Trilogic.CompareWindow.cs" />
     <Compile Include="Data\SchemaCollection.cs" />
+    <Compile Include="Data\SchemaLogBuilder.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
